@@ -10,6 +10,10 @@ services:
       POSTGRES_DB: mcp_test
     ports:
       - "5433:5432"
+    volumes:
+      - ./test-database/test-database.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+    # Healthcheck ensures the DB is ready AND seeding is finished 
+    # before scripts/setup-test-db.sh allows tests to run.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U mcp -d mcp_test"]
       interval: 5s

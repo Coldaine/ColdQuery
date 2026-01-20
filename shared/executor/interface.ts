@@ -12,7 +12,9 @@ export interface QueryOptions {
  * Abstraction over database connections that enables testability and proper transaction handling.
  *
  * WHY THIS INTERFACE EXISTS:
- * - Decouples business logic from the pg library, allowing MockExecutor for tests
+ * - Provides a clean, async/await interface for SQL execution
+ * - Decouples business logic from the pg library
+ * - Supports both simple queries and transactional sessions
  * - Hides footgun methods like PoolClient.release() that cause connection leaks if misused
  * - Provides a uniform API whether you're using pooled or session-dedicated connections
  *
@@ -22,7 +24,7 @@ export interface QueryOptions {
  */
 export interface QueryExecutor {
     execute(sql: string, params?: unknown[], options?: QueryOptions): Promise<QueryResult>;
-    disconnect(): Promise<void>;
+    disconnect(destroy?: boolean): Promise<void>;
 
     /**
      * Returns an executor bound to a single dedicated connection.

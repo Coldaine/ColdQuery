@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { ActionHandler } from "../../types.js";
+import { ActionHandler, resolveExecutor } from "../../types.js";
 
 export const ListSchema = z.object({
     action: z.literal("list"),
     target: z.enum(["database", "schema", "table", "column", "index", "view", "function", "trigger", "sequence", "constraint"]),
-    schema: z.string().optional(),
-    table: z.string().optional(),
+    schema: z.string().optional().describe("Filter by schema name"),
+    table: z.string().optional().describe("Filter by table name (only applies to some targets)"),
+    session_id: z.string().optional().describe("Session ID. Required to list objects created in uncommitted transactions."),
     options: z.object({
         include_sizes: z.boolean().optional(),
         include_materialized: z.boolean().optional(),
@@ -14,9 +15,18 @@ export const ListSchema = z.object({
     }).optional(),
 });
 
+/**
+ * List handler for schema introspection.
+ * 
+ * WHY SESSION SUPPORT:
+ * Facilitates 'discovery' of newly created objects within a transaction 
+ * before they are committed.
+ */
 export const listHandler: ActionHandler<typeof ListSchema> = {
     schema: ListSchema,
     handler: async (params, context) => {
+        const executor = resolveExecutor(context, params.session_id);
+        
         let { sql, args } = await getListQuery(params);
 
         if (params.options?.limit) {
@@ -28,7 +38,7 @@ export const listHandler: ActionHandler<typeof ListSchema> = {
             sql += ` OFFSET ${params.options.offset}`;
         }
 
-        return await context.executor.execute(sql, args);
+        return await executor.execute(sql, args);
     },
 };
 

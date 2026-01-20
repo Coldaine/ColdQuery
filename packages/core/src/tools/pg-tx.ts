@@ -1,4 +1,4 @@
-import { ActionRegistry, ToolDefinition } from "../types.js";
+import { ActionRegistry, ToolDefinition, ActionContext } from "../types.js";
 import { txHandler } from "../actions/tx/tx.js";
 
 const txRegistry: ActionRegistry = {
@@ -7,6 +7,7 @@ const txRegistry: ActionRegistry = {
     rollback: txHandler,
     savepoint: txHandler,
     release: txHandler,
+    list: txHandler,
 };
 
 export const PgTxToolSchema = txHandler.schema;
@@ -22,7 +23,7 @@ export async function pgTxHandler(params: any, context: ActionContext) {
 export const pgTxTool: ToolDefinition = {
     name: "pg_tx",
     config: {
-        description: "Transaction control (begin, commit, rollback, savepoint, release)",
+        description: "Transaction control (begin, commit, rollback, savepoint, release, list)",
         inputSchema: PgTxToolSchema,
     },
     handler: (context) => (params) => pgTxHandler(params, context),

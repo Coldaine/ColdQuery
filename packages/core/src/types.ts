@@ -26,3 +26,17 @@ export interface ToolDefinition {
     };
     handler: (context: ActionContext) => (params: any) => Promise<any>;
 }
+
+/**
+ * Helper to resolve the correct executor (global vs session-bound)
+ */
+export function resolveExecutor(context: ActionContext, sessionId?: string): QueryExecutor {
+    if (!sessionId) {
+        return context.executor;
+    }
+    const sessionExec = context.sessionManager.getSessionExecutor(sessionId);
+    if (!sessionExec) {
+        throw new Error(`Invalid or expired session ID: ${sessionId}`);
+    }
+    return sessionExec;
+}

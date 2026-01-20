@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionHandler } from "../../types.js";
+import { ActionHandler, resolveExecutor } from "../../types.js";
 import { Logger } from "../../logger.js";
 import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
 
@@ -8,11 +8,21 @@ export const SettingsSchema = z.object({
     subaction: z.enum(["list", "get", "set"]).default("list"),
     target: z.string().optional(),
     value: z.string().optional(),
+    session_id: z.string().optional().describe("Session ID for transactional settings. Use to set session-local variables."),
+    autocommit: z.boolean().optional().describe("Set to true to execute immediately. Required for 'set' if no session_id is provided."),
 });
 
 export const settingsHandler: ActionHandler<typeof SettingsSchema> = {
     schema: SettingsSchema,
     handler: async (params, context) => {
+        // Safety Guard for 'set' action
+        if (params.subaction === "set" && !params.session_id && !params.autocommit) {
+            throw new Error(
+                "Safety Check Failed: 'set' operation requires either a valid 'session_id' or 'autocommit: true'. " +
+                "Note: 'SET' is session-local; without a session_id, it will have no effect on subsequent queries."
+            );
+        }
+
         const start = Date.now();
         Logger.info(`[pg_admin.settings] params: ${JSON.stringify(params)}`);
 
@@ -29,9 +39,7 @@ export const settingsHandler: ActionHandler<typeof SettingsSchema> = {
                 if (!params.target || params.value === undefined) {
                     throw new Error("Both target and value are required for 'set'");
                 }
-                // Note: SET is session-local. ALTER SYSTEM would be persistent but requires superuser/restart for some.
-                // We'll use SET for now as it's safer for a tool.
-                // Sanitize the setting name to prevent SQL injection.
+                // Note: SET is session-local.
                 sql = `SET ${sanitizeIdentifier(params.target)} = $1`;
                 args.push(params.value);
                 break;
@@ -46,7 +54,8 @@ export const settingsHandler: ActionHandler<typeof SettingsSchema> = {
         }
 
         try {
-            const result = await context.executor.execute(sql, args);
+            const executor = resolveExecutor(context, params.session_id);
+            const result = await executor.execute(sql, args);
             const elapsed = Date.now() - start;
             Logger.info(`[pg_admin.settings] completed in ${elapsed}ms`);
 

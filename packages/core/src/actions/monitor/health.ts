@@ -7,7 +7,7 @@ export const HealthSchema = z.object({
 
 export const healthHandler: ActionHandler<typeof HealthSchema> = {
     schema: HealthSchema,
-    handler: async (params, context) => {
+    handler: async (_params, context) => {
         const sql = "SELECT version(), current_database(), now()";
         const result = await context.executor.execute(sql);
         return {

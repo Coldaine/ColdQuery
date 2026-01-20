@@ -42,6 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 - Monorepo structure with npm workspaces
 - Core tools: pg_query, pg_schema, pg_admin, pg_monitor, pg_tx
-- QueryExecutor interface with PostgresExecutor and MockExecutor
+- QueryExecutor interface with PostgresExecutor implementation
 - Identifier sanitization utilities in shared/security
 - Basic test infrastructure

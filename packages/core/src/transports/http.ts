@@ -11,7 +11,7 @@ export async function setupHttpTransport(server: McpServer, port: number) {
 
     let transport: SSEServerTransport | null = null;
 
-    app.get("/sse", async (req, res) => {
+    app.get("/sse", async (_req, res) => {
         transport = new SSEServerTransport("/message", res);
         await server.connect(transport);
     });

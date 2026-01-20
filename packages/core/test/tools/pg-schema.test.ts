@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { pgSchemaHandler } from "../../src/tools/pg-schema.js";
 import { PostgresExecutor } from "../../../../shared/executor/postgres.js";
+import { SessionManager } from "../../src/session.js";
 
 describe("pg_schema (live)", () => {
     let executor: PostgresExecutor;
@@ -8,13 +9,14 @@ describe("pg_schema (live)", () => {
 
     beforeAll(async () => {
         executor = new PostgresExecutor({
-            host: "localhost",
+            host: "127.0.0.1",
             port: 5433,
             user: "mcp",
             password: "mcp",
             database: "mcp_test",
         });
-        context = { executor };
+        const sessionManager = new SessionManager(executor);
+        context = { executor, sessionManager };
     });
 
     it("should handle list tables", async () => {
@@ -62,7 +64,8 @@ describe("pg_schema (live)", () => {
             target: "table",
             name: "live_test_table",
             schema: "public",
-            definition: "id serial primary key, name text"
+            definition: "id serial primary key, name text",
+            autocommit: true,
         }, context);
 
         const verify = await executor.execute("SELECT 1 FROM information_schema.tables WHERE table_name = 'live_test_table'");
@@ -78,7 +81,8 @@ describe("pg_schema (live)", () => {
             action: "alter",
             target: "table",
             name: "live_test_alter",
-            definition: "ADD COLUMN age integer"
+            definition: "ADD COLUMN age integer",
+            autocommit: true,
         }, context);
 
         const verify = await executor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'live_test_alter' AND column_name = 'age'");
@@ -91,7 +95,8 @@ describe("pg_schema (live)", () => {
         await pgSchemaHandler({
             action: "drop",
             target: "table",
-            name: "live_test_drop"
+            name: "live_test_drop",
+            autocommit: true,
         }, context);
 
         const verify = await executor.execute("SELECT 1 FROM information_schema.tables WHERE table_name = 'live_test_drop'");

@@ -1,31 +1,16 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler, resolveExecutor } from "../../types.js";
 import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
+import { QueryExecutor } from "@pg-mcp/shared/executor/interface.js";
 
-/**
- * DDL (Data Definition Language) handler for schema modifications.
- *
- * SECURITY MODEL:
- * - params.name and params.schema are sanitized via sanitizeIdentifier()
- * - params.definition accepts raw SQL (see below for why)
- *
- * WHY params.definition ACCEPTS RAW SQL:
- * PostgreSQL column definitions are complex (constraints, defaults, generated columns,
- * foreign keys, CHECK expressions, etc.). Parsing and validating all possible DDL syntax:
- * - Would be error-prone (always incomplete vs actual PostgreSQL grammar)
- * - Creates maintenance burden (new PostgreSQL versions add syntax)
- * - Limits users (can't use features we didn't implement)
- *
- * TRUST MODEL:
- * This tool assumes the AI generates valid DDL. It is NOT designed for untrusted
- * human input. If accepting user input for definitions, validate in your app first.
- */
 export const DDLSchema = z.object({
     action: z.enum(["create", "alter", "drop"]),
     target: z.enum(["table", "index", "view", "function", "trigger", "schema"]),
-    name: z.string(),
-    schema: z.string().optional(),
-    definition: z.string().optional(),
+    name: z.string().describe("Name of the object to create/alter/drop"),
+    schema: z.string().optional().describe("Target schema name"),
+    session_id: z.string().optional().describe("Session ID for transactional DDL. Required for schema changes within a transaction."),
+    autocommit: z.boolean().optional().describe("Set to true to execute DDL immediately without a transaction. Required if session_id is not provided."),
+    definition: z.string().optional().describe("Object definition SQL (e.g. column list for table, select for view)"),
     options: z.object({
         cascade: z.boolean().optional(),
         if_exists: z.boolean().optional(),
@@ -33,23 +18,43 @@ export const DDLSchema = z.object({
     }).optional(),
 });
 
+/**
+ * DDL Handler for Schema Mutations.
+ * 
+ * WHY SESSION SUPPORT IN DDL:
+ * PostgreSQL supports transactional DDL. This is critical for AI agents 
+ * performing complex refactorings (e.g. adding a column and populating data).
+ * If the data migration fails, we want the schema change to rollback as well.
+ */
 export const ddlHandler: ActionHandler<typeof DDLSchema> = {
     schema: DDLSchema,
     handler: async (params, context) => {
+        // Default-Deny Policy: Prevent accidental non-transactional DDL
+        if (!params.session_id && !params.autocommit) {
+            throw new Error(
+                "Safety Check Failed: DDL operations require either a valid 'session_id' (for transactions) or 'autocommit: true' (for immediate execution). " +
+                "Example: { action: 'drop', target: 'table', name: 'old_table', autocommit: true }"
+            );
+        }
+
+        // Resolve executor - if session_id is provided, we use the dedicated connection
+        const executor = resolveExecutor(context, params.session_id);
+
         switch (params.action) {
             case "create":
-                return await handleCreate(params, context);
+                return await handleCreate(params, executor);
             case "alter":
-                return await handleAlter(params, context);
+                return await handleAlter(params, executor);
             case "drop":
-                return await handleDrop(params, context);
+                return await handleDrop(params, executor);
             default:
                 throw new Error(`DDL action "${params.action}" not implemented yet`);
         }
     },
 };
 
-async function handleCreate(params: z.infer<typeof DDLSchema>, context: ActionContext) {
+// ... existing handleCreate/handleAlter/handleDrop functions updated to take executor instead of context ...
+async function handleCreate(params: z.infer<typeof DDLSchema>, executor: QueryExecutor) {
     const safeName = sanitizeIdentifier(params.name);
     const schemaPrefix = params.schema ? `${sanitizeIdentifier(params.schema)}.` : "";
     let sql = "";
@@ -58,14 +63,10 @@ async function handleCreate(params: z.infer<typeof DDLSchema>, context: ActionCo
         case "table":
             if (!params.definition) throw new Error("Definition required for create table");
             const ifNotExists = params.options?.if_not_exists ? "IF NOT EXISTS " : "";
-            // Note: params.definition is raw SQL (column definitions) and cannot be easily sanitized
-            // without a full SQL parser. We assume the user has validated the schema definition.
             sql = `CREATE TABLE ${ifNotExists}${schemaPrefix}${safeName} (${params.definition})`;
             break;
         case "index":
             if (!params.definition) throw new Error("Definition required for create index (target table)");
-            // For index, params.definition is usually "table_name(column)" or just "table_name"
-            // We'll treat it as raw to allow complex index definitions, but we sanitize the index name
             sql = `CREATE INDEX ${safeName} ON ${schemaPrefix}${params.definition}`;
             break;
         case "view":
@@ -76,10 +77,10 @@ async function handleCreate(params: z.infer<typeof DDLSchema>, context: ActionCo
             throw new Error(`Create target "${params.target}" not implemented yet`);
     }
 
-    return await context.executor.execute(sql);
+    return await executor.execute(sql);
 }
 
-async function handleAlter(params: z.infer<typeof DDLSchema>, context: ActionContext) {
+async function handleAlter(params: z.infer<typeof DDLSchema>, executor: QueryExecutor) {
     const safeName = sanitizeIdentifier(params.name);
     const schemaPrefix = params.schema ? `${sanitizeIdentifier(params.schema)}.` : "";
     let sql = "";
@@ -93,10 +94,10 @@ async function handleAlter(params: z.infer<typeof DDLSchema>, context: ActionCon
             throw new Error(`Alter target "${params.target}" not implemented yet`);
     }
 
-    return await context.executor.execute(sql);
+    return await executor.execute(sql);
 }
 
-async function handleDrop(params: z.infer<typeof DDLSchema>, context: ActionContext) {
+async function handleDrop(params: z.infer<typeof DDLSchema>, executor: QueryExecutor) {
     const safeName = sanitizeIdentifier(params.name);
     const schemaPrefix = params.schema ? `${sanitizeIdentifier(params.schema)}.` : "";
     const ifExists = params.options?.if_exists ? "IF EXISTS " : "";
@@ -120,5 +121,5 @@ async function handleDrop(params: z.infer<typeof DDLSchema>, context: ActionCont
             throw new Error(`Drop target "${params.target}" not implemented yet`);
     }
 
-    return await context.executor.execute(sql);
+    return await executor.execute(sql);
 }

@@ -238,3 +238,18 @@ The `definition` parameter accepts raw SQL (e.g., `id SERIAL PRIMARY KEY, name T
 - Structured logging across all handlers (currently inconsistent)
 - Use `sanitizeIdentifier()` consistently in all DDL operations
 - Connection health checks and automatic reconnection
+
+---
+
+## 9. Testing Architecture
+
+The project uses a live PostgreSQL container for integration testing to ensure real-world compatibility and verify agent reliability features (like transactions).
+
+### Database Lifecycle
+- **Spin Up:** Managed by `scripts/setup-test-db.sh`. This script is idempotent; it starts the container if not running and waits for the Docker healthcheck to signal "healthy" (ensuring seeding is complete) before allowing tests to proceed.
+- **Automated Teardown:** The `test:ci` script in `package.json` executes `docker compose down` after Vitest finishes, ensuring no orphaned containers are left running.
+- **Rationale:** We use a healthcheck-based wait rather than fixed sleeps to provide the fastest possible startup time.
+
+### Tools
+- **Vitest:** Primary test runner.
+- **Docker Compose:** Manages the isolated test environment and seeding.

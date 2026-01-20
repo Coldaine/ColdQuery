@@ -9,6 +9,7 @@ import { pgAdminTool } from "./tools/pg-admin.js";
 import { pgMonitorTool } from "./tools/pg-monitor.js";
 import { pgTxTool } from "./tools/pg-tx.js";
 import { setupHttpTransport } from "./transports/http.js";
+import { wrapResponse } from "./middleware/session-echo.js";
 
 const server = new McpServer({
     name: "pg-mcp-core",
@@ -16,11 +17,11 @@ const server = new McpServer({
 });
 
 const executor = new PostgresExecutor({
-    host: process.env.PGHOST || "localhost",
-    port: parseInt(process.env.PGPORT || "5432"),
-    user: process.env.PGUSER || "postgres",
-    password: process.env.PGPASSWORD || "postgres",
-    database: process.env.PGDATABASE || "postgres",
+    host: process.env['PGHOST'] || "localhost",
+    port: parseInt(process.env['PGPORT'] || "5432"),
+    user: process.env['PGUSER'] || "postgres",
+    password: process.env['PGPASSWORD'] || "",
+    database: process.env['PGDATABASE'] || "postgres",
 });
 
 const sessionManager = new SessionManager(executor);
@@ -60,7 +61,8 @@ for (const tool of tools) {
         tool.name,
         tool.config,
         async (params) => {
-            const result = await tool.handler(context)(params);
+            const rawResult = await tool.handler(context)(params);
+            const result = wrapResponse(rawResult, params, tool.name, sessionManager);
             return {
                 content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
             };
@@ -74,7 +76,7 @@ async function main() {
         : "stdio";
 
     if (transportType === "sse" || transportType === "http") {
-        const port = parseInt(process.env.PORT || "3000");
+        const port = parseInt(process.env['PORT'] || "3000");
         await setupHttpTransport(server, port);
     } else {
         const transport = new StdioServerTransport();

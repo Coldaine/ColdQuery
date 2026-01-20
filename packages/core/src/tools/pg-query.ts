@@ -3,17 +3,20 @@ import { ActionRegistry, ActionContext, ToolDefinition } from "../types.js";
 import { readHandler } from "../actions/query/read.js";
 import { writeHandler } from "../actions/query/write.js";
 import { explainHandler } from "../actions/query/explain.js";
+import { transactionHandler } from "../actions/query/transaction.js";
 
 const queryRegistry: ActionRegistry = {
     read: readHandler,
     write: writeHandler,
     explain: explainHandler,
+    transaction: transactionHandler,
 };
 
 export const PgQuerySchema = z.discriminatedUnion("action", [
     readHandler.schema,
     writeHandler.schema,
     explainHandler.schema,
+    transactionHandler.schema,
 ]);
 
 export async function pgQueryHandler(params: z.infer<typeof PgQuerySchema>, context: ActionContext) {

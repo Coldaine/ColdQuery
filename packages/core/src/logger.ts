@@ -19,12 +19,14 @@ export interface LogEntry {
  */
 export class Logger {
     private static format(level: LogLevel, message: string, context?: Record<string, unknown>): string {
-        const entry: LogEntry = {
+        const entry: any = {
             timestamp: new Date().toISOString(),
             level,
             message,
-            context,
         };
+        if (context) {
+            entry.context = context;
+        }
         return JSON.stringify(entry);
     }
 
@@ -41,7 +43,7 @@ export class Logger {
     }
 
     static debug(message: string, context?: Record<string, unknown>) {
-        if (process.env.DEBUG) {
+        if (process.env['DEBUG']) {
             console.error(this.format("debug", message, context));
         }
     }

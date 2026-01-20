@@ -8,7 +8,7 @@ describe("pg_monitor (live)", () => {
 
     beforeAll(async () => {
         executor = new PostgresExecutor({
-            host: "localhost",
+            host: "127.0.0.1",
             port: 5433,
             user: "mcp",
             password: "mcp",

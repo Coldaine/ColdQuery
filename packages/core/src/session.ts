@@ -11,28 +11,39 @@ interface Session {
 
 export class SessionManager {
     private sessions = new Map<string, Session>();
-    // 5 minutes default TTL - strictly enforced to prevent resource exhaustion
-    private readonly TTL_MS = 5 * 60 * 1000; 
+    // 30 minutes default TTL - balanced for agentic workflows
+    private TTL_MS = 30 * 60 * 1000; 
+    private MAX_SESSIONS = 10;
 
-    constructor(private readonly globalExecutor: QueryExecutor) {}
+    constructor(private readonly globalExecutor: QueryExecutor, config?: { maxSessions?: number; ttlMs?: number }) {
+        if (config?.maxSessions) this.MAX_SESSIONS = config.maxSessions;
+        if (config?.ttlMs) this.TTL_MS = config.ttlMs;
+    }
 
     /**
      * Creates a new session with a dedicated database connection.
      * Returns the unique session ID.
      */
     async createSession(): Promise<string> {
+        if (this.sessions.size >= this.MAX_SESSIONS) {
+            throw new Error(`Maximum session limit (${this.MAX_SESSIONS}) reached. Please close an existing session before creating a new one.`);
+        }
+
         const id = randomUUID();
         const sessionExecutor = await this.globalExecutor.createSession();
 
-        // Create session object with placeholder timer to avoid race condition.
-        // We add to the map BEFORE starting the timer so closeSession() can find it
-        // if the timer fires immediately (shouldn't happen, but defense in depth).
         const session: Session = {
             id,
             executor: sessionExecutor,
             lastActive: Date.now(),
             timeoutTimer: null as unknown as NodeJS.Timeout,
         };
+
+        // Atomic check and set: ensure we didn't exceed limit while awaiting connection
+        if (this.sessions.size >= this.MAX_SESSIONS) {
+            await sessionExecutor.disconnect(true);
+            throw new Error(`Maximum session limit (${this.MAX_SESSIONS}) reached. Please close an existing session before creating a new one.`);
+        }
 
         this.sessions.set(id, session);
         session.timeoutTimer = this.startTimer(id);
@@ -64,12 +75,38 @@ export class SessionManager {
         if (session) {
             clearTimeout(session.timeoutTimer);
             try {
-                await session.executor.disconnect();
+                // Pass true to destroy the connection, ensuring no session state leaks
+                await session.executor.disconnect(true);
             } catch (error: any) {
                 Logger.error(`[SessionManager] Error closing session ${id}`, { error: error.message });
             }
             this.sessions.delete(id);
         }
+    }
+
+    /**
+     * Returns a list of active sessions with metadata.
+     */
+    listSessions() {
+        const now = Date.now();
+        return Array.from(this.sessions.values()).map(s => {
+            // Correct logic: We want age since creation or last active? Plan says 'age', implied since start or last usage.
+            // Let's assume 'age' means how long since it was LAST ACTIVE for now to track idleness, 
+            // OR if we tracked 'startedAt' we could show total age. 
+            // The plan showed "age: 2m 30s", "expires_in: 27m 30s". 
+            // This implies age = time since last activity (idle time) or total lifespan.
+            // Let's use 'idle_time' for clarity as that's what matters for TTL.
+            // Wait, previous code didn't track startedAt. I'll just use idle time.
+            
+            const idleTimeMs = now - s.lastActive;
+            const expiresAt = s.lastActive + this.TTL_MS;
+            
+            return {
+                id: s.id,
+                idle_time: `${Math.round(idleTimeMs / 1000)}s`,
+                expires_in: `${Math.round((expiresAt - now) / 60000)}m`,
+            };
+        });
     }
 
     private startTimer(id: string): NodeJS.Timeout {

@@ -96,76 +96,41 @@ SELECT
   NOW() - (random() * 30 || ' days')::interval
 FROM generate_series(1, 500);
 
--- Vector embeddings
-CREATE TABLE test_embeddings (
-  id SERIAL PRIMARY KEY,
-  content TEXT,
-  embedding vector(384)
-);
+-- Vector embeddings (DISABLED: Requires pgvector)
+-- CREATE TABLE test_embeddings (
+--   id SERIAL PRIMARY KEY,
+--   content TEXT,
+--   embedding vector(384)
+-- );
 
-INSERT INTO test_embeddings (content, embedding)
-SELECT 
-  'Sample document ' || i,
-  ('[' || array_to_string(
-    ARRAY(SELECT (random() * 2 - 1)::float4 FROM generate_series(1, 384)), 
-    ','
-  ) || ']')::vector
-FROM generate_series(1, 50) i;
+-- PostGIS locations (DISABLED: Requires PostGIS)
+-- CREATE TABLE test_locations (
+--   id SERIAL PRIMARY KEY,
+--   name VARCHAR(100),
+--   location GEOMETRY(POINT, 4326)
+-- );
 
-CREATE INDEX ON test_embeddings USING hnsw (embedding vector_cosine_ops);
+-- Citext users (DISABLED: Requires citext)
+-- CREATE TABLE test_users (
+--   id SERIAL PRIMARY KEY,
+--   username CITEXT NOT NULL UNIQUE,
+--   email CITEXT NOT NULL
+-- );
 
--- PostGIS locations
-CREATE TABLE test_locations (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100),
-  location GEOMETRY(POINT, 4326)
-);
+-- Ltree categories (DISABLED: Requires ltree)
+-- CREATE TABLE test_categories (
+--   id SERIAL PRIMARY KEY,
+--   name VARCHAR(100),
+--   path LTREE
+-- );
 
-INSERT INTO test_locations (name, location) VALUES
-  ('New York', ST_SetSRID(ST_MakePoint(-74.006, 40.7128), 4326)),
-  ('Los Angeles', ST_SetSRID(ST_MakePoint(-118.2437, 34.0522), 4326)),
-  ('Chicago', ST_SetSRID(ST_MakePoint(-87.6298, 41.8781), 4326)),
-  ('London', ST_SetSRID(ST_MakePoint(-0.1276, 51.5074), 4326)),
-  ('Tokyo', ST_SetSRID(ST_MakePoint(139.6917, 35.6895), 4326));
-
-CREATE INDEX idx_locations_geo ON test_locations USING GIST(location);
-
--- Citext users
-CREATE TABLE test_users (
-  id SERIAL PRIMARY KEY,
-  username CITEXT NOT NULL UNIQUE,
-  email CITEXT NOT NULL
-);
-
-INSERT INTO test_users (username, email) VALUES
-  ('JohnDoe', 'John.Doe@Example.com'),
-  ('JaneSmith', 'JANE.SMITH@example.COM'),
-  ('BobJones', 'bob.jones@EXAMPLE.com');
-
--- Ltree categories
-CREATE TABLE test_categories (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100),
-  path LTREE
-);
-
-CREATE INDEX idx_categories_path ON test_categories USING GIST(path);
-
-INSERT INTO test_categories (name, path) VALUES
-  ('Electronics', 'electronics'),
-  ('Phones', 'electronics.phones'),
-  ('Smartphones', 'electronics.phones.smartphones'),
-  ('Accessories', 'electronics.accessories'),
-  ('Clothing', 'clothing'),
-  ('Shirts', 'clothing.shirts');
-
--- Secure data for pgcrypto  
-CREATE TABLE test_secure_data (
-  id SERIAL PRIMARY KEY,
-  user_id INT,
-  sensitive_data BYTEA,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+-- Secure data for pgcrypto (DISABLED: Requires pgcrypto)
+-- CREATE TABLE test_secure_data (
+--   id SERIAL PRIMARY KEY,
+--   user_id INT,
+--   sensitive_data BYTEA,
+--   created_at TIMESTAMP DEFAULT NOW()
+-- );
 
 -- Partitioned events table
 CREATE TABLE test_events (

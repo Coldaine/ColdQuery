@@ -5,6 +5,7 @@ import { pgSchemaHandler } from "../../src/tools/pg-schema.js";
 import { pgAdminHandler } from "../../src/tools/pg-admin.js";
 import { pgMonitorHandler } from "../../src/tools/pg-monitor.js";
 import { pgTxHandler } from "../../src/tools/pg-tx.js";
+import { SessionManager } from "../../src/session.js";
 
 describe("Core Integration Tests", { timeout: 10000 }, () => {
     let executor: PostgresExecutor;
@@ -12,13 +13,14 @@ describe("Core Integration Tests", { timeout: 10000 }, () => {
 
     beforeAll(async () => {
         executor = new PostgresExecutor({
-            host: "localhost",
+            host: "127.0.0.1",
             port: 5433,
             user: "mcp",
             password: "mcp",
             database: "mcp_test",
         });
-        context = { executor };
+        const sessionManager = new SessionManager(executor);
+        context = { executor, sessionManager };
 
         // Wait a bit for PG to be fully ready even if healthcheck passed
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -31,14 +33,16 @@ describe("Core Integration Tests", { timeout: 10000 }, () => {
             target: "table",
             name: "users_integrated",
             schema: "public",
-            definition: "id serial primary key, name text, email text"
+            definition: "id serial primary key, name text, email text",
+            autocommit: true,
         }, context);
 
         // 2. Write: Insert Data
         await pgQueryHandler({
             action: "write",
             sql: "INSERT INTO users_integrated (name, email) VALUES ($1, $2)",
-            params: ["John Doe", "john@example.com"]
+            params: ["John Doe", "john@example.com"],
+            autocommit: true,
         }, context);
 
         // 3. Read: Verify Data
@@ -74,15 +78,21 @@ describe("Core Integration Tests", { timeout: 10000 }, () => {
         await pgSchemaHandler({
             action: "drop",
             target: "table",
-            name: "users_integrated"
+            name: "users_integrated",
+            autocommit: true,
         }, context);
     });
 
     it("should handle transactions correctly", async () => {
-        // Manual transaction flow would need a session-aware executor logic
-        // For now we test at least the BEGIN/COMMIT syntax works against real DB
-        await pgTxHandler({ action: "begin" }, context);
-        await pgQueryHandler({ action: "read", sql: "SELECT 1" }, context);
-        await pgTxHandler({ action: "commit" }, context);
+        const beginRes = await pgTxHandler({ action: "begin" }, context);
+        const sessionId = beginRes.session_id;
+
+        await pgQueryHandler({ 
+            action: "read", 
+            sql: "SELECT 1",
+            session_id: sessionId
+        }, context);
+
+        await pgTxHandler({ action: "commit", session_id: sessionId }, context);
     });
 });
