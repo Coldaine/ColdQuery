@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler } from "../../types.js";
 import { Logger } from "../../logger.js";
+import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
 
 export const SettingsSchema = z.object({
     action: z.literal("settings"),
@@ -30,7 +31,8 @@ export const settingsHandler: ActionHandler<typeof SettingsSchema> = {
                 }
                 // Note: SET is session-local. ALTER SYSTEM would be persistent but requires superuser/restart for some.
                 // We'll use SET for now as it's safer for a tool.
-                sql = `SET ${params.target} = $1`;
+                // Sanitize the setting name to prevent SQL injection.
+                sql = `SET ${sanitizeIdentifier(params.target)} = $1`;
                 args.push(params.value);
                 break;
             case "list":

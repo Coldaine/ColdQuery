@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler } from "../../types.js";
+import { Logger } from "../../logger.js";
 
 export const ObservabilitySchema = z.object({
     action: z.enum(["connections", "locks", "size", "activity"]),
@@ -14,7 +15,7 @@ export const observabilityHandler: ActionHandler<typeof ObservabilitySchema> = {
     schema: ObservabilitySchema,
     handler: async (params, context) => {
         const start = Date.now();
-        console.error(`[pg_monitor.observability] action: ${params.action}, params: ${JSON.stringify(params)}`);
+        Logger.info(`[pg_monitor.observability] action: ${params.action}`, { params });
 
         let sql = "";
         const args: any[] = [];
@@ -83,7 +84,7 @@ export const observabilityHandler: ActionHandler<typeof ObservabilitySchema> = {
         try {
             const result = await context.executor.execute(sql, args);
             const elapsed = Date.now() - start;
-            console.error(`[pg_monitor.observability] completed in ${elapsed}ms`);
+            Logger.info(`[pg_monitor.observability] completed in ${elapsed}ms`);
 
             if (params.action === "size" && params.options?.database) {
                 return {
@@ -93,7 +94,7 @@ export const observabilityHandler: ActionHandler<typeof ObservabilitySchema> = {
             }
             return result;
         } catch (error: any) {
-            console.error(`[pg_monitor.observability] error: ${error.message}`);
+            Logger.error(`[pg_monitor.observability] error: ${error.message}`);
             throw error;
         }
     },

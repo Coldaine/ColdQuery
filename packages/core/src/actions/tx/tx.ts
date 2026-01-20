@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler } from "../../types.js";
 import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
 
 export const TxSchema = z.object({

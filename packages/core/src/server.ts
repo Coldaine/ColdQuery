@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { PostgresExecutor } from "@pg-mcp/shared/executor/postgres.js";
 import { Logger } from "./logger.js";
+import { SessionManager } from "./session.js";
 import { pgQueryTool } from "./tools/pg-query.js";
 import { pgSchemaTool } from "./tools/pg-schema.js";
 import { pgAdminTool } from "./tools/pg-admin.js";
@@ -11,7 +12,7 @@ import { setupHttpTransport } from "./transports/http.js";
 
 const server = new McpServer({
     name: "pg-mcp-core",
-    version: "1.0.0",
+    version: "0.2.0",
 });
 
 const executor = new PostgresExecutor({
@@ -22,7 +23,8 @@ const executor = new PostgresExecutor({
     database: process.env.PGDATABASE || "postgres",
 });
 
-const context = { executor };
+const sessionManager = new SessionManager(executor);
+const context = { executor, sessionManager };
 
 /**
  * Tool Registration Pattern

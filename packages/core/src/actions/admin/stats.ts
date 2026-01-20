@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler } from "../../types.js";
 
 export const StatsSchema = z.object({
     action: z.literal("stats"),

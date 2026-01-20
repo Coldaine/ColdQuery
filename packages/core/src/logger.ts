@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 export type LogLevel = "info" | "warn" | "error" | "debug";
 
 export interface LogEntry {

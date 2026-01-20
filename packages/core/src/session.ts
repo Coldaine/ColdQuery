@@ -1,5 +1,6 @@
 import { QueryExecutor } from "@pg-mcp/shared/executor/interface.js";
 import { randomUUID } from "crypto";
+import { Logger } from "./logger.js";
 
 interface Session {
     id: string;
@@ -22,15 +23,19 @@ export class SessionManager {
     async createSession(): Promise<string> {
         const id = randomUUID();
         const sessionExecutor = await this.globalExecutor.createSession();
-        
+
+        // Create session object with placeholder timer to avoid race condition.
+        // We add to the map BEFORE starting the timer so closeSession() can find it
+        // if the timer fires immediately (shouldn't happen, but defense in depth).
         const session: Session = {
             id,
             executor: sessionExecutor,
             lastActive: Date.now(),
-            timeoutTimer: this.startTimer(id),
+            timeoutTimer: null as unknown as NodeJS.Timeout,
         };
 
         this.sessions.set(id, session);
+        session.timeoutTimer = this.startTimer(id);
         return id;
     }
 
@@ -60,8 +65,8 @@ export class SessionManager {
             clearTimeout(session.timeoutTimer);
             try {
                 await session.executor.disconnect();
-            } catch (error) {
-                console.error(`Error closing session ${id}:`, error);
+            } catch (error: any) {
+                Logger.error(`[SessionManager] Error closing session ${id}`, { error: error.message });
             }
             this.sessions.delete(id);
         }
@@ -69,7 +74,7 @@ export class SessionManager {
 
     private startTimer(id: string): NodeJS.Timeout {
         return setTimeout(() => {
-            console.error(`[SessionManager] Session ${id} timed out. Auto-closing to prevent leaks.`);
+            Logger.warn(`[SessionManager] Session ${id} timed out. Auto-closing to prevent leaks.`);
             this.closeSession(id);
         }, this.TTL_MS);
     }

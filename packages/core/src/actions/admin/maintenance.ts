@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler } from "../../types.js";
 
 export const MaintenanceSchema = z.object({
     action: z.enum(["vacuum", "analyze", "reindex"]),

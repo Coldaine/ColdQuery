@@ -1,5 +1,4 @@
-import { z } from "zod";
-import { ActionRegistry, ActionContext, ToolDefinition } from "../types.js";
+import { ActionRegistry, ToolDefinition } from "../types.js";
 import { txHandler } from "../actions/tx/tx.js";
 
 const txRegistry: ActionRegistry = {
