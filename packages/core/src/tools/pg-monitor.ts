@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionRegistry, ActionContext } from "../types.js";
+import { ActionRegistry, ActionContext, ToolDefinition } from "../types.js";
 import { healthHandler } from "../actions/monitor/health.js";
 import { observabilityHandler } from "../actions/monitor/observability.js";
 
@@ -8,6 +8,7 @@ const monitorRegistry: ActionRegistry = {
     connections: observabilityHandler,
     locks: observabilityHandler,
     size: observabilityHandler,
+    activity: observabilityHandler,
 };
 
 export const PgMonitorToolSchema = z.discriminatedUnion("action", [
@@ -22,3 +23,12 @@ export async function pgMonitorHandler(params: any, context: ActionContext) {
     }
     return await handler.handler(params, context);
 }
+
+export const pgMonitorTool: ToolDefinition = {
+    name: "pg_monitor",
+    config: {
+        description: "Database observability (connections, locks, size, activity, health)",
+        inputSchema: PgMonitorToolSchema,
+    },
+    handler: (context) => (params) => pgMonitorHandler(params, context),
+};

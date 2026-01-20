@@ -4,6 +4,24 @@
  * Provides safe handling of PostgreSQL identifiers (table names, column names, schema names)
  * to prevent SQL injection attacks via identifier interpolation.
  *
+ * WHY THIS EXISTS:
+ * DDL operations (CREATE TABLE, DROP INDEX, etc.) cannot use parameterized queries for
+ * identifiers - only for values. This creates SQL injection risk when identifiers come
+ * from untrusted sources. This module provides defense-in-depth:
+ *
+ * SECURITY MODEL (defense in depth):
+ * 1. VALIDATE - Reject identifiers that don't match PostgreSQL naming rules
+ *    (catches obvious attacks like "users; DROP TABLE users--")
+ * 2. ESCAPE - Double any embedded quotes (" → "")
+ *    (handles edge cases like legitimate names containing quotes)
+ * 3. QUOTE - Always wrap in double quotes
+ *    (ensures reserved keywords and special chars are safe)
+ *
+ * WHY BOTH VALIDATE AND ESCAPE?
+ * - Validation catches mistakes early with clear error messages
+ * - Escaping handles edge cases that slip through validation
+ * - Even if one layer has a bug, the other provides protection
+ *
  * PostgreSQL identifier rules:
  * - Must start with a letter (a-z) or underscore (_)
  * - Can contain letters, digits (0-9), underscores, and dollar signs ($)
@@ -23,8 +41,16 @@ const IDENTIFIER_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_$]*$/;
 const MAX_IDENTIFIER_LENGTH = 63;
 
 /**
- * Reserved PostgreSQL keywords that require quoting
- * This is a subset of the most commonly problematic keywords
+ * Reserved PostgreSQL keywords that require quoting.
+ * This is a subset of the most commonly problematic keywords.
+ *
+ * WHY THIS LIST EXISTS (even though it's not enforced):
+ * - Documentation: developers can see which words are reserved
+ * - needsQuoting() uses this for advisory warnings
+ * - Future: could enable strict mode that rejects reserved keywords
+ *
+ * NOTE: PostgreSQL ALLOWS creating tables named "SELECT", "FROM", etc.
+ * when quoted. We don't block this - we just ensure proper quoting.
  */
 const RESERVED_KEYWORDS = new Set([
     "all",

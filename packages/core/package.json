@@ -1,12 +1,13 @@
 {
     "name": "@pg-mcp/core",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "type": "module",
     "private": true,
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.25.2",
         "@pg-mcp/shared": "*",
         "commander": "^14.0.0",
+        "express": "^5.2.1",
         "pg": "^8.17.0",
         "zod": "^4.3.5"
     },

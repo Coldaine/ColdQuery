@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler } from "../../types.js";
+import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
 
 export const TxSchema = z.object({
     action: z.enum(["begin", "commit", "rollback", "savepoint", "release"]),
@@ -29,11 +30,11 @@ export const txHandler: ActionHandler<typeof TxSchema> = {
                 break;
             case "savepoint":
                 if (!params.name) throw new Error("Savepoint name is required");
-                sql = `SAVEPOINT "${params.name}"`;
+                sql = `SAVEPOINT ${sanitizeIdentifier(params.name)}`;
                 break;
             case "release":
                 if (!params.name) throw new Error("Savepoint name is required for release");
-                sql = `RELEASE SAVEPOINT "${params.name}"`;
+                sql = `RELEASE SAVEPOINT ${sanitizeIdentifier(params.name)}`;
                 break;
         }
 

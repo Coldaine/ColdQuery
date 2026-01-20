@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionRegistry, ActionContext } from "../types.js";
+import { ActionRegistry, ActionContext, ToolDefinition } from "../types.js";
 import { readHandler } from "../actions/query/read.js";
 import { writeHandler } from "../actions/query/write.js";
 import { explainHandler } from "../actions/query/explain.js";
@@ -23,3 +23,12 @@ export async function pgQueryHandler(params: z.infer<typeof PgQuerySchema>, cont
     }
     return await handler.handler(params, context);
 }
+
+export const pgQueryTool: ToolDefinition = {
+    name: "pg_query",
+    config: {
+        description: "Execute SQL queries for data manipulation (DML) and raw read/write operations",
+        inputSchema: PgQuerySchema,
+    },
+    handler: (context) => (params) => pgQueryHandler(params, context),
+};

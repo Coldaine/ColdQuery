@@ -10,6 +10,13 @@ export const WriteSchema = z.object({
     }).optional(),
 });
 
+/**
+ * Write handler for INSERT/UPDATE/DELETE queries.
+ *
+ * NOTE: Implementation is identical to readHandler. See read.ts for detailed
+ * explanation of why we maintain separate handlers despite identical code.
+ * TL;DR: semantic separation for audit trails and future extensibility.
+ */
 export const writeHandler: ActionHandler<typeof WriteSchema> = {
     schema: WriteSchema,
     handler: async (params, context) => {

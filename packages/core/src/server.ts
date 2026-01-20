@@ -1,15 +1,18 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { PostgresExecutor } from "@pg-mcp/shared/executor/postgres.js";
-import { pgQueryHandler, PgQuerySchema } from "./tools/pg-query.js";
-import { pgSchemaHandler, PgSchemaToolSchema } from "./tools/pg-schema.js";
-import { pgAdminHandler, PgAdminToolSchema } from "./tools/pg-admin.js";
-import { pgMonitorHandler, PgMonitorToolSchema } from "./tools/pg-monitor.js";
-import { pgTxHandler, PgTxToolSchema } from "./tools/pg-tx.js";
+import { Logger } from "./logger.js";
+import { SessionManager } from "./session.js";
+import { pgQueryTool } from "./tools/pg-query.js";
+import { pgSchemaTool } from "./tools/pg-schema.js";
+import { pgAdminTool } from "./tools/pg-admin.js";
+import { pgMonitorTool } from "./tools/pg-monitor.js";
+import { pgTxTool } from "./tools/pg-tx.js";
+import { setupHttpTransport } from "./transports/http.js";
 
 const server = new McpServer({
     name: "pg-mcp-core",
-    version: "1.0.0",
+    version: "0.2.0",
 });
 
 const executor = new PostgresExecutor({
@@ -20,59 +23,50 @@ const executor = new PostgresExecutor({
     database: process.env.PGDATABASE || "postgres",
 });
 
-const context = { executor };
+const sessionManager = new SessionManager(executor);
+const context = { executor, sessionManager };
 
-server.registerTool("pg_query", {
-    description: "Execute SQL queries (read, write, explain)",
-    inputSchema: PgQuerySchema
-}, async (params) => {
-    const result = await pgQueryHandler(params, context);
-    return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-    };
-});
+/**
+ * Tool Registration Pattern
+ *
+ * WHY CURRIED HANDLERS: handler: (context) => (params) => result
+ * - Tool definitions are static (defined at import time)
+ * - Context (executor) is only available at runtime
+ * - Currying delays context binding until registration, enabling:
+ *   - Testing with mock context
+ *   - Defining tools in separate files without circular imports
+ *
+ * WHY EXPLICIT ARRAY (not auto-discovery):
+ * - All tools visible in one place for easy auditing
+ * - Build fails if a tool import is broken (vs runtime error with auto-discovery)
+ * - No filesystem scanning magic
+ *
+ * WHY UNIFORM JSON RESPONSE WRAPPING:
+ * - MCP requires { content: [...] } format
+ * - Centralizing here means handlers return plain objects
+ * - Handlers stay testable without MCP dependencies
+ */
+const tools = [
+    pgQueryTool,
+    pgSchemaTool,
+    pgAdminTool,
+    pgMonitorTool,
+    pgTxTool
+];
 
-server.registerTool("pg_schema", {
-    description: "Manage database structure (list, describe, create, alter, drop)",
-    inputSchema: PgSchemaToolSchema
-}, async (params) => {
-    const result = await pgSchemaHandler(params, context);
-    return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-    };
-});
-
-server.registerTool("pg_admin", {
-    description: "Database maintenance (vacuum, analyze, reindex, stats, settings)",
-    inputSchema: PgAdminToolSchema
-}, async (params) => {
-    const result = await pgAdminHandler(params, context);
-    return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-    };
-});
-
-server.registerTool("pg_monitor", {
-    description: "Database observability (connections, locks, size, activity, health)",
-    inputSchema: PgMonitorToolSchema
-}, async (params) => {
-    const result = await pgMonitorHandler(params, context);
-    return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-    };
-});
-
-server.registerTool("pg_tx", {
-    description: "Transaction control (begin, commit, rollback, savepoint, release)",
-    inputSchema: PgTxToolSchema
-}, async (params) => {
-    const result = await pgTxHandler(params, context);
-    return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-    };
-});
-
-import { setupHttpTransport } from "./transports/http.js";
+for (const tool of tools) {
+    Logger.info(`registering tool: ${tool.name}`);
+    server.registerTool(
+        tool.name,
+        tool.config,
+        async (params) => {
+            const result = await tool.handler(context)(params);
+            return {
+                content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+            };
+        }
+    );
+}
 
 async function main() {
     const transportType = process.argv.includes("--transport")
@@ -85,7 +79,7 @@ async function main() {
     } else {
         const transport = new StdioServerTransport();
         await server.connect(transport);
-        console.error("PostgreSQL MCP Server running on stdio");
+        Logger.info("PostgreSQL MCP Server running on stdio");
     }
 }
 

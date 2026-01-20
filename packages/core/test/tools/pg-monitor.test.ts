@@ -52,4 +52,16 @@ describe("pg_monitor (live)", () => {
         expect(result.rows.length).toBeGreaterThan(0);
         expect(result.rows[0].name).toBe("mcp_test");
     });
+
+    it("should handle activity", async () => {
+        const result = await pgMonitorHandler({
+            action: "activity",
+            options: { include_idle: true }
+        } as any, context);
+
+        expect(result.rows).toBeDefined();
+        // With include_idle, we should definitely have rows
+        expect(result.rows.length).toBeGreaterThan(0);
+        expect(result.rows[0].query).toBeDefined();
+    });
 });

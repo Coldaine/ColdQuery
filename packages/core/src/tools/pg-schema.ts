@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionRegistry, ActionContext } from "../types.js";
+import { ActionRegistry, ActionContext, ToolDefinition } from "../types.js";
 import { listHandler } from "../actions/schema/list.js";
 import { describeHandler } from "../actions/schema/describe.js";
 import { ddlHandler } from "../actions/schema/ddl.js";
@@ -25,3 +25,12 @@ export async function pgSchemaHandler(params: any, context: ActionContext) {
     }
     return await handler.handler(params, context);
 }
+
+export const pgSchemaTool: ToolDefinition = {
+    name: "pg_schema",
+    config: {
+        description: "Manage database structure and schema objects (DDL) - create, alter, drop tables/indexes",
+        inputSchema: PgSchemaToolSchema,
+    },
+    handler: (context) => (params) => pgSchemaHandler(params, context),
+};

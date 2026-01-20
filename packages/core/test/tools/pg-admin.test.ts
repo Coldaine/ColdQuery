@@ -56,4 +56,16 @@ describe("pg_admin (live)", () => {
         expect(result.rows.length).toBeGreaterThan(0);
         expect(result.rows[0].table_name).toBe("test_products");
     });
+
+    it("should handle settings", async () => {
+        const result = await pgAdminHandler({
+            action: "settings",
+            subaction: "get",
+            target: "max_connections"
+        } as any, context);
+
+        expect(result.rows).toBeDefined();
+        expect(result.rows.length).toBe(1);
+        expect(result.rows[0].name).toBe("max_connections");
+    });
 });

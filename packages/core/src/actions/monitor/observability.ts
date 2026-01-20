@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { ActionHandler, ActionContext } from "../../types.js";
+import { ActionHandler } from "../../types.js";
+import { Logger } from "../../logger.js";
 
 export const ObservabilitySchema = z.object({
-    action: z.enum(["connections", "locks", "size"]),
+    action: z.enum(["connections", "locks", "size", "activity"]),
     options: z.object({
         database: z.string().optional(),
         schema: z.string().optional(),
@@ -13,10 +14,28 @@ export const ObservabilitySchema = z.object({
 export const observabilityHandler: ActionHandler<typeof ObservabilitySchema> = {
     schema: ObservabilitySchema,
     handler: async (params, context) => {
+        const start = Date.now();
+        Logger.info(`[pg_monitor.observability] action: ${params.action}`, { params });
+
         let sql = "";
         const args: any[] = [];
 
         switch (params.action) {
+            case "activity":
+                const activityFilter = params.options?.include_idle ? "" : "WHERE state != 'idle' AND pid != pg_backend_pid()";
+                sql = `
+                    SELECT 
+                        pid, 
+                        usename as user, 
+                        datname as database, 
+                        state, 
+                        query, 
+                        query_start
+                    FROM pg_stat_activity 
+                    ${activityFilter}
+                    ORDER BY query_start DESC;
+                `;
+                break;
             case "connections":
                 const filter = params.options?.include_idle ? "" : "WHERE state != 'idle'";
                 sql = `
@@ -62,13 +81,21 @@ export const observabilityHandler: ActionHandler<typeof ObservabilitySchema> = {
                 break;
         }
 
-        const result = await context.executor.execute(sql, args);
-        if (params.action === "size" && params.options?.database) {
-            return {
-                ...result,
-                rows: [{ name: params.options.database, size: result.rows[0].size }]
-            };
+        try {
+            const result = await context.executor.execute(sql, args);
+            const elapsed = Date.now() - start;
+            Logger.info(`[pg_monitor.observability] completed in ${elapsed}ms`);
+
+            if (params.action === "size" && params.options?.database) {
+                return {
+                    ...result,
+                    rows: [{ name: params.options.database, size: result.rows[0].size }]
+                };
+            }
+            return result;
+        } catch (error: any) {
+            Logger.error(`[pg_monitor.observability] error: ${error.message}`);
+            throw error;
         }
-        return result;
     },
 };
