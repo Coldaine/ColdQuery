@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { PostgresExecutor } from "@pg-mcp/shared/executor/postgres.js";
+import { Logger } from "./logger.js";
 import { pgQueryTool } from "./tools/pg-query.js";
 import { pgSchemaTool } from "./tools/pg-schema.js";
 import { pgAdminTool } from "./tools/pg-admin.js";
@@ -23,7 +24,26 @@ const executor = new PostgresExecutor({
 
 const context = { executor };
 
-// Register all tools using the plugin pattern
+/**
+ * Tool Registration Pattern
+ *
+ * WHY CURRIED HANDLERS: handler: (context) => (params) => result
+ * - Tool definitions are static (defined at import time)
+ * - Context (executor) is only available at runtime
+ * - Currying delays context binding until registration, enabling:
+ *   - Testing with mock context
+ *   - Defining tools in separate files without circular imports
+ *
+ * WHY EXPLICIT ARRAY (not auto-discovery):
+ * - All tools visible in one place for easy auditing
+ * - Build fails if a tool import is broken (vs runtime error with auto-discovery)
+ * - No filesystem scanning magic
+ *
+ * WHY UNIFORM JSON RESPONSE WRAPPING:
+ * - MCP requires { content: [...] } format
+ * - Centralizing here means handlers return plain objects
+ * - Handlers stay testable without MCP dependencies
+ */
 const tools = [
     pgQueryTool,
     pgSchemaTool,
@@ -33,7 +53,7 @@ const tools = [
 ];
 
 for (const tool of tools) {
-    console.error(`[server] registering tool: ${tool.name}`);
+    Logger.info(`registering tool: ${tool.name}`);
     server.registerTool(
         tool.name,
         tool.config,
@@ -57,7 +77,7 @@ async function main() {
     } else {
         const transport = new StdioServerTransport();
         await server.connect(transport);
-        console.error("PostgreSQL MCP Server running on stdio");
+        Logger.info("PostgreSQL MCP Server running on stdio");
     }
 }
 

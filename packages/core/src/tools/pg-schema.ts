@@ -29,7 +29,7 @@ export async function pgSchemaHandler(params: any, context: ActionContext) {
 export const pgSchemaTool: ToolDefinition = {
     name: "pg_schema",
     config: {
-        description: "Manage database structure (list, describe, create, alter, drop)",
+        description: "Manage database structure and schema objects (DDL) - create, alter, drop tables/indexes",
         inputSchema: PgSchemaToolSchema,
     },
     handler: (context) => (params) => pgSchemaHandler(params, context),

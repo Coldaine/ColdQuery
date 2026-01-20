@@ -27,7 +27,7 @@ export async function pgQueryHandler(params: z.infer<typeof PgQuerySchema>, cont
 export const pgQueryTool: ToolDefinition = {
     name: "pg_query",
     config: {
-        description: "Execute SQL queries (read, write, explain)",
+        description: "Execute SQL queries for data manipulation (DML) and raw read/write operations",
         inputSchema: PgQuerySchema,
     },
     handler: (context) => (params) => pgQueryHandler(params, context),

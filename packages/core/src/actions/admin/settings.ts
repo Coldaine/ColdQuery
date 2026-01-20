@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ActionHandler, ActionContext } from "../../types.js";
+import { Logger } from "../../logger.js";
 
 export const SettingsSchema = z.object({
     action: z.literal("settings"),
@@ -12,7 +13,7 @@ export const settingsHandler: ActionHandler<typeof SettingsSchema> = {
     schema: SettingsSchema,
     handler: async (params, context) => {
         const start = Date.now();
-        console.error(`[pg_admin.settings] params: ${JSON.stringify(params)}`);
+        Logger.info(`[pg_admin.settings] params: ${JSON.stringify(params)}`);
 
         let sql = "";
         const args: any[] = [];
@@ -45,14 +46,14 @@ export const settingsHandler: ActionHandler<typeof SettingsSchema> = {
         try {
             const result = await context.executor.execute(sql, args);
             const elapsed = Date.now() - start;
-            console.error(`[pg_admin.settings] completed in ${elapsed}ms`);
+            Logger.info(`[pg_admin.settings] completed in ${elapsed}ms`);
 
             if (params.subaction === "set") {
                 return { status: "success", message: `Setting ${params.target} updated to ${params.value}` };
             }
             return result;
         } catch (error: any) {
-            console.error(`[pg_admin.settings] error: ${error.message}`);
+            Logger.error(`[pg_admin.settings] error: ${error.message}`);
             throw error;
         }
     },
