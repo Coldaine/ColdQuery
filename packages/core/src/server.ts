@@ -12,7 +12,7 @@ import { setupHttpTransport } from "./transports/http.js";
 import { wrapResponse } from "./middleware/session-echo.js";
 
 const server = new McpServer({
-    name: "pg-mcp-core",
+    name: "coldquery",
     version: "0.2.0",
 });
 
@@ -57,9 +57,20 @@ const tools = [
 
 for (const tool of tools) {
     Logger.info(`registering tool: ${tool.name}`);
+
+    const { description, inputSchema, readOnlyHint, destructiveHint } = tool.config;
+
+    const annotations: { readOnlyHint?: boolean; destructiveHint?: boolean } = {};
+    if (readOnlyHint !== undefined) annotations.readOnlyHint = readOnlyHint;
+    if (destructiveHint !== undefined) annotations.destructiveHint = destructiveHint;
+
     server.registerTool(
         tool.name,
-        tool.config,
+        {
+            description,
+            inputSchema,
+            ...(Object.keys(annotations).length > 0 ? { annotations } : {}),
+        },
         async (params) => {
             const rawResult = await tool.handler(context)(params);
             const result = wrapResponse(rawResult, params, tool.name, sessionManager);
@@ -81,7 +92,7 @@ async function main() {
     } else {
         const transport = new StdioServerTransport();
         await server.connect(transport);
-        Logger.info("PostgreSQL MCP Server running on stdio");
+        Logger.info("ColdQuery running on stdio");
     }
 }
 

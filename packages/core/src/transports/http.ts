@@ -93,7 +93,7 @@ export async function setupHttpTransport(server: McpServer, port: number) {
     });
 
     app.listen(port, "127.0.0.1", () => {
-        Logger.info(`PostgreSQL MCP HTTP Server running on http://127.0.0.1:${port}`);
+        Logger.info(`ColdQuery HTTP Server running on http://127.0.0.1:${port}`);
         Logger.info(`MCP endpoint: http://127.0.0.1:${port}/mcp`);
         Logger.info(`Health check: http://127.0.0.1:${port}/health`);
         if (allowedOrigins) {

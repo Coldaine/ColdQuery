@@ -1,8 +1,8 @@
-# Gemini Instructions for postgresql-mcp
+# Gemini Instructions for ColdQuery
 
 ## Project Overview
 
-This is a PostgreSQL MCP (Model Context Protocol) server designed for agentic AI workflows. It provides database access tools that are safe, transactional, and LLM-friendly.
+ColdQuery is a PostgreSQL MCP (Model Context Protocol) server designed for agentic AI workflows. It provides database access tools that are safe, transactional, and LLM-friendly.
 
 ## Critical: Tool Description Documentation
 

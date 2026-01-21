@@ -1,5 +1,5 @@
 /**
- * postgres-mcp - Identifier Sanitization Utilities
+ * ColdQuery - Identifier Sanitization Utilities
  *
  * Provides safe handling of PostgreSQL identifiers (table names, column names, schema names)
  * to prevent SQL injection attacks via identifier interpolation.

@@ -30,8 +30,23 @@ export async function pgQueryHandler(params: z.infer<typeof PgQuerySchema>, cont
 export const pgQueryTool: ToolDefinition = {
     name: "pg_query",
     config: {
-        description: "Execute SQL queries for data manipulation (DML) and raw read/write operations",
+        description: `Execute SQL queries for data manipulation (DML) and raw read/write operations.
+
+Actions:
+  • read: Execute SELECT queries (safe, read-only)
+  • write: Execute INSERT/UPDATE/DELETE (requires session_id OR autocommit:true)
+  • explain: Analyze query execution plans (supports EXPLAIN ANALYZE)
+  • transaction: Execute multiple statements atomically (stateless batch)
+
+Safety: Write operations use Default-Deny policy to prevent accidental data corruption.
+Without session_id or autocommit:true, writes will fail with a safety error.
+
+Examples:
+  {"action": "read", "sql": "SELECT * FROM users LIMIT 10"}
+  {"action": "write", "sql": "UPDATE users SET active = true", "autocommit": true}
+  {"action": "transaction", "operations": [{"sql": "..."}]}`,
         inputSchema: PgQuerySchema,
+        destructiveHint: true, // Contains write/transaction actions that can modify data
     },
     handler: (context) => (params) => pgQueryHandler(params, context),
 };

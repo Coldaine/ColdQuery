@@ -29,8 +29,24 @@ export async function pgSchemaHandler(params: any, context: ActionContext) {
 export const pgSchemaTool: ToolDefinition = {
     name: "pg_schema",
     config: {
-        description: "Manage database structure and schema objects (DDL) - create, alter, drop tables/indexes",
+        description: `Manage database structure and schema objects (DDL).
+
+Actions:
+  • list: Enumerate schemas, tables, views, functions, triggers, sequences, constraints (read-only)
+  • describe: Get detailed structure of tables (columns, indexes) (read-only)
+  • create: Create new tables, indexes, views (requires session_id OR autocommit:true)
+  • alter: Modify existing tables (requires session_id OR autocommit:true)
+  • drop: Remove objects with optional CASCADE (requires session_id OR autocommit:true)
+
+Safety: DDL mutations (create/alter/drop) use Default-Deny policy.
+Without session_id or autocommit:true, DDL will fail with a safety error.
+
+Examples:
+  {"action": "list", "target": "table"}
+  {"action": "describe", "target": "table", "name": "users"}
+  {"action": "create", "target": "table", "name": "logs", "definition": "id SERIAL PRIMARY KEY", "autocommit": true}`,
         inputSchema: PgSchemaToolSchema,
+        destructiveHint: true, // Contains create/alter/drop actions that can modify schema
     },
     handler: (context) => (params) => pgSchemaHandler(params, context),
 };

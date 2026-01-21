@@ -1,12 +1,12 @@
 {
-  "name": "postgres-mcp",
+  "name": "coldquery",
   "version": "0.2.0",
-  "description": "PostgreSQL MCP server with connection pooling, tool filtering, and full extension support",
+  "description": "ColdQuery - PostgreSQL MCP server with connection pooling, tool filtering, and full extension support",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "postgres-mcp": "dist/cli.js"
+    "coldquery": "dist/cli.js"
   },
   "files": [
     "dist"
@@ -40,12 +40,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Coldaine/postgresql-mcp.git"
+    "url": "git+https://github.com/Coldaine/ColdQuery.git"
   },
   "bugs": {
-    "url": "https://github.com/Coldaine/postgresql-mcp/issues"
+    "url": "https://github.com/Coldaine/ColdQuery/issues"
   },
-  "homepage": "https://github.com/Coldaine/postgresql-mcp#readme",
+  "homepage": "https://github.com/Coldaine/ColdQuery#readme",
   "engines": {
     "node": ">=24.0.0"
   },

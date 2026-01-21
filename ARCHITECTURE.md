@@ -1,4 +1,4 @@
-# PostgreSQL MCP Architecture
+# ColdQuery Architecture
 
 This document explains the **why** behind key architectural decisions in this codebase.
 

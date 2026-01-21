@@ -6,7 +6,7 @@ const TARGET_URL = process.env.MCP_TEST_URL; // e.g., http://raspberryoracle:300
 const runTests = !!TARGET_URL;
 
 /**
- * E2E Acceptance Tests for PostgreSQL MCP Server
+ * E2E Acceptance Tests for ColdQuery
  *
  * Test Isolation Strategy (Hybrid):
  * - Persistent schema: `acceptance_test` (created once, dropped on cleanup)

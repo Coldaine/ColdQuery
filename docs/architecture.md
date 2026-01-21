@@ -1,4 +1,4 @@
-# PostgreSQL MCP Server Architecture
+# ColdQuery Architecture
 
 ## Problem Statement
 
@@ -25,7 +25,7 @@ A single MCP server that acts as a gateway to PostgreSQL, deployed once and acce
                     ┌─────────────────────────────────┐
                     │ Raspberry Pi                    │
                     │ ┌─────────────────────────────┐ │
-                    │ │ PostgreSQL MCP Server       │ │
+                    │ │ ColdQuery                   │ │
                     │ │ - Streamable HTTP transport │ │
                     │ │ - Session management        │ │
                     │ │ - Connection pooling        │ │

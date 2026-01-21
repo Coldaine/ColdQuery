@@ -2,8 +2,8 @@ import { z } from "zod";
 import { ActionHandler } from "../../types.js";
 
 export const StatsSchema = z.object({
-    action: z.literal("stats"),
-    target: z.string().optional(),
+    action: z.literal("stats").describe("Stats action - view table activity statistics from pg_stat_user_tables"),
+    target: z.string().optional().describe("Specific table name. If omitted, returns top 20 tables by activity (inserts + updates + deletes)"),
 });
 
 export const statsHandler: ActionHandler<typeof StatsSchema> = {

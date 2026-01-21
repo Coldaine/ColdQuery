@@ -2,15 +2,15 @@ import { z } from "zod";
 import { ActionHandler, resolveExecutor } from "../../types.js";
 
 export const ExplainSchema = z.object({
-    action: z.literal("explain"),
-    sql: z.string(),
-    params: z.array(z.unknown()).optional(),
+    action: z.literal("explain").describe("Explain action - analyze query execution plans"),
+    sql: z.string().describe("SQL query to analyze (will be prefixed with EXPLAIN)"),
+    params: z.array(z.unknown()).optional().describe("Parameterized query values for the analyzed query"),
     session_id: z.string().optional().describe("Session ID returned by pg_tx 'begin'. Required if checking plan for uncommitted changes."),
     options: z.object({
-        explain_analyze: z.boolean().optional(),
-        explain_format: z.enum(["text", "json"]).optional(),
-        timeout_ms: z.number().optional(),
-    }).optional(),
+        explain_analyze: z.boolean().optional().describe("Run EXPLAIN ANALYZE (actually executes the query for real timing data)"),
+        explain_format: z.enum(["text", "json"]).optional().describe("Output format: 'text' for human-readable, 'json' for structured data"),
+        timeout_ms: z.number().optional().describe("Query timeout in milliseconds"),
+    }).optional().describe("EXPLAIN options for plan analysis"),
 });
 
 /**

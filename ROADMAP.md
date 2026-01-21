@@ -1,4 +1,4 @@
-# PostgreSQL MCP Roadmap
+# ColdQuery Roadmap
 
 Future extensions planned for this MCP server.
 

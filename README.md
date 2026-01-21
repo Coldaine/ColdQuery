@@ -1,4 +1,4 @@
-# PostgreSQL MCP Server
+# ColdQuery
 
 A secure, stateful PostgreSQL Model Context Protocol (MCP) server optimized for Agentic AI workflows.
 
