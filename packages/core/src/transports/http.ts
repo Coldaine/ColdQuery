@@ -1,5 +1,4 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import express, { Request, Response } from "express";
 import { Logger } from "../logger.js";
 import { createMcpServer } from "../server.js";
@@ -11,12 +10,6 @@ import { createMcpServer } from "../server.js";
  * coding environments (Claude Code, Cursor, VS Code, etc.) simultaneously.
  */
 const sessions = new Map<string, { transport: SSEServerTransport; server: any }>();
-
-function getAllowedOrigins(): string[] | undefined {
-    const origins = process.env['MCP_ALLOWED_ORIGINS'];
-    if (!origins) return undefined;
-    return origins.split(',').map(s => s.trim()).filter(Boolean);
-}
 
 export async function setupHttpTransport(port: number) {
     const app = express();
@@ -32,13 +25,13 @@ export async function setupHttpTransport(port: number) {
         const server = createMcpServer();
 
         // Store session
-        sessions.set(transport.sessionId, { transport, server });
-        Logger.info(`Session created: ${transport.sessionId}`, { active_sessions: sessions.size });
+        sessions.set(transport['sessionId'], { transport, server });
+        Logger.info(`Session created: ${transport['sessionId']}`, { active_sessions: sessions.size });
 
         // Clean up on close
         transport.onclose = () => {
-             sessions.delete(transport.sessionId);
-             Logger.info(`Session closed: ${transport.sessionId}`, { active_sessions: sessions.size });
+             sessions.delete(transport['sessionId']);
+             Logger.info(`Session closed: ${transport['sessionId']}`, { active_sessions: sessions.size });
         };
 
         await server.connect(transport);
@@ -46,7 +39,7 @@ export async function setupHttpTransport(port: number) {
 
     // POST /mcp: Handle JSON-RPC messages
     app.post("/mcp", async (req: Request, res: Response) => {
-        const sessionId = req.query.sessionId as string;
+        const sessionId = req.query['sessionId'] as string;
         if (!sessionId) {
             return res.status(400).send("Missing sessionId query parameter");
         }
@@ -56,7 +49,7 @@ export async function setupHttpTransport(port: number) {
             return res.status(404).send("Session not found");
         }
 
-        await session.transport.handlePostMessage(req, res, req.body);
+        return await session.transport.handlePostMessage(req, res, req.body);
     });
 
     // Health check endpoint (outside MCP protocol)
