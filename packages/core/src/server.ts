@@ -24,6 +24,18 @@ const sessionManager = new SessionManager(executor);
 const context = { executor, sessionManager };
 
 /**
+ * Server Lifecycle Management
+ * 
+ * WHY SHARED CONTEXT:
+ * - The 'executor' (DB pool) and 'sessionManager' are shared across all 
+ *   clients to maximize connection reuse and maintain global session limits.
+ *
+ * WHY FACTORY (createMcpServer):
+ * - To support multi-client HTTP/SSE, we must provide each client with its 
+ *   own McpServer instance to handle the protocol handshake and state.
+ */
+
+/**
  * Tool Registration Pattern
  *
  * WHY CURRIED HANDLERS: handler: (context) => (params) => result

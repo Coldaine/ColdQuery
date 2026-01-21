@@ -253,3 +253,18 @@ The project uses a live PostgreSQL container for integration testing to ensure r
 ### Tools
 - **Vitest:** Primary test runner.
 - **Docker Compose:** Manages the isolated test environment and seeding.
+
+---
+
+## 10. Multi-Client Gateway Pattern
+
+**Location:** `packages/core/src/transports/http.ts`, `packages/core/src/server.ts`
+
+### Why This Architecture?
+To operate as a persistent network gateway on a Raspberry Pi, we must handle multiple independent clients (IDE windows, CLI instances) without mixing state or requiring multiple server processes.
+
+### Key Implementation Details:
+1. **SSE (Server-Sent Events) Transport:** Replaced the generic Streamable HTTP transport with a explicit SSE `/mcp` endpoint and POST message routing. This is more robust for high-latency connections over Tailscale.
+2. **Server Factory Pattern:** Instead of a single `McpServer` instance, we use `createMcpServer()` to instantiate a new server object **per incoming connection**.
+3. **Session Map:** The HTTP layer maintains a `Map` of session IDs to active transport/server pairs, ensuring messages are routed to the correct isolated instance.
+4. **Isolated Cleanup:** When an SSE connection drops, the associated `McpServer` and its transport are discarded, ensuring no resource leaks or stale sessions.

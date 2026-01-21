@@ -26,7 +26,7 @@ A single MCP server that acts as a gateway to PostgreSQL, deployed once and acce
                     │ Raspberry Pi                    │
                     │ ┌─────────────────────────────┐ │
                     │ │ ColdQuery                   │ │
-                    │ │ - Streamable HTTP transport │ │
+                    │ │ - SSE / POST transport      │ │
                     │ │ - Session management        │ │
                     │ │ - Connection pooling        │ │
                     │ └──────────────┬──────────────┘ │
@@ -81,7 +81,7 @@ Each coding environment gets its own MCP session:
 - PostgreSQL transactions isolated per client
 - Clean disconnect handling
 
-## Transport Choice: Streamable HTTP
+## Transport Choice: SSE / POST
 
 ### Why Not stdio?
 
@@ -94,14 +94,14 @@ The stdio transport (MCP default) spawns a server per client:
 ❌ Credential sprawl
 ```
 
-### Why Streamable HTTP?
+### Why SSE / POST?
 
 ```
-✓ One server, many clients
+✓ One server, many clients (Gateway pattern)
 ✓ Credentials in one place
 ✓ Central connection pooling
-✓ Tailscale handles auth
-✓ MCP 2025-11-25 spec compliant
+✓ Tailscale handles encryption/auth
+✓ Robust "handshake" via SSE endpoints
 ```
 
 ## Session Model

@@ -6,8 +6,19 @@ import { createMcpServer } from "../server.js";
 /**
  * Session Management for Multi-Client Access
  *
- * The MCP server runs as a gateway on the Pi, handling connections from multiple
- * coding environments (Claude Code, Cursor, VS Code, etc.) simultaneously.
+ * WHY SSE TRANSPORT (instead of generic HTTP):
+ * - The standard MCP HTTP transport uses a complex initialization handshake that is 
+ *   flaky on high-latency or multiple-client networks (like Tailscale/Pi).
+ * - SSEServerTransport provides a stable, one-way event stream for server-to-client
+ *   push, while use standard POST for client-to-server.
+ *
+ * WHY FACTORY PATTERN (createMcpServer per connection):
+ * - The @modelcontextprotocol/sdk McpServer maintains internal state per transport.
+ * - By creating a new McpServer instance per SSE session, we ensure:
+ *   - Perfect session isolation (clients don't see each other's state)
+ *   - Clean registration log for every new connection
+ *   - Reliable 'initialization' handshake for every client
+ *   - Automatic cleanup when the SSE connection drops
  */
 const sessions = new Map<string, { transport: SSEServerTransport; server: any }>();
 

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-01-21
+
+### Fixed
+- **Transport Layer**: Migrated from `StreamableHTTPServerTransport` to `SSEServerTransport` + `express` adapter to resolve "Server not initialized" errors on high-latency networks (Tailscale/Pi).
+- **Deployment Security**: Hardened CI/CD pipeline by removing secrets from shell arguments and moving to encrypted `.env` file generation.
+- **SSH Connectivity**: Fixed "Host key verification failed" in CI by implementing `webfactory/ssh-agent`.
+
+### Changed
+- **Server Architecture**: Switched to a Factory Pattern for the MCP server, creating isolated instances per connection for better multi-client stability.
+
 ## [0.2.0] - 2026-01-20
 
 ### Added
