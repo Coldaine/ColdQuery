@@ -2,20 +2,48 @@
 
 A secure, stateful PostgreSQL Model Context Protocol (MCP) server optimized for Agentic AI workflows.
 
+## Quick Start
+
+```bash
+# 1. Clone and install
+git clone https://github.com/Coldaine/ColdQuery.git
+cd ColdQuery
+npm install
+
+# 2. Start test database
+docker compose up -d
+
+# 3. Build and run tests
+npm run build
+npm test
+```
+
 ## Key Features
 
-- **Transactional Safety:** "Default-Deny" write policy prevents accidental data corruption.
-- **Stateful Sessions:** Persistent database connections for multi-step reasoning.
-- **Batch Operations:** Atomic multi-statement execution via `pg_transaction`.
-- **LLM Ergonomics:** Active session hints and discovery (`pg_tx:list`).
-- **Secure by Design:** Destructive session cleanup and connection pooling.
+- **Transactional Safety:** "Default-Deny" write policy prevents accidental data corruption
+- **Stateful Sessions:** Persistent database connections for multi-step reasoning
+- **Batch Operations:** Atomic multi-statement execution via `pg_transaction`
+- **LLM Ergonomics:** Active session hints and discovery (`pg_tx:list`)
+- **Secure by Design:** Destructive session cleanup and connection pooling
+
+## Available Tools
+
+| Tool | Purpose | Actions |
+|------|---------|---------|
+| `pg_query` | Data manipulation (DML) | `read`, `write`, `explain`, `transaction` |
+| `pg_schema` | Schema management (DDL) | `list`, `describe`, `create`, `alter`, `drop` |
+| `pg_admin` | Database maintenance | `vacuum`, `analyze`, `reindex`, `stats`, `settings` |
+| `pg_tx` | Transaction control | `begin`, `commit`, `rollback`, `savepoint`, `release`, `list` |
+| `pg_monitor` | Observability | `health`, `activity`, `connections`, `locks`, `size` |
 
 ## Transactional Safety Guide
 
-To prevent silent failures where an AI agent intends to use a transaction but forgets the `session_id`, this server enforces a **Default-Deny** policy for all write operations.
+The **Default-Deny** policy prevents silent failures where an AI agent intends to use a transaction but forgets the `session_id`.
 
-### 1. Simple Writes (Autocommit)
-For single-statement updates where a transaction isn't needed, you MUST explicitly set `autocommit: true`.
+### Simple Writes (Autocommit)
+
+For single-statement updates where a transaction isn't needed:
+
 ```json
 {
   "action": "write",
@@ -24,51 +52,78 @@ For single-statement updates where a transaction isn't needed, you MUST explicit
 }
 ```
 
-### 2. Multi-Step Transactions (Sessions)
-For complex workflows involving multiple queries:
-1. Call `pg_tx` with `action: "begin"` to get a `session_id`.
-2. Pass the `session_id` to all subsequent `pg_query`, `pg_schema`, or `pg_admin` calls.
-3. Call `pg_tx` with `action: "commit"` or `"rollback"` using the same `session_id`.
+### Multi-Step Transactions
 
-### 3. Atomic Batch Writes
-For multiple statements that should succeed or fail together without session management:
+For complex workflows involving multiple queries:
+
+```json
+// 1. Begin transaction
+{"action": "begin"}
+// Response: {"session_id": "tx_abc123"}
+
+// 2. Use session_id for all operations
+{"action": "write", "sql": "UPDATE ...", "session_id": "tx_abc123"}
+{"action": "write", "sql": "INSERT ...", "session_id": "tx_abc123"}
+
+// 3. Commit or rollback
+{"action": "commit", "session_id": "tx_abc123"}
+```
+
+### Atomic Batch Writes
+
+For multiple statements that should succeed or fail together:
+
 ```json
 {
   "action": "transaction",
   "operations": [
-    { "sql": "INSERT INTO logs (msg) VALUES ($1)", "params": ["started"] },
-    { "sql": "UPDATE status SET val = $1", "params": ["running"] }
+    {"sql": "INSERT INTO logs (msg) VALUES ($1)", "params": ["started"]},
+    {"sql": "UPDATE status SET val = $1", "params": ["running"]}
   ]
 }
 ```
 
-## Tooling Overview
-
-| Tool | Action | Purpose | Safety |
-|------|--------|---------|--------|
-| `pg_query` | `read` | Fetch data | Session-aware (optional) |
-| `pg_query` | `write` | Modify data | **Requires** `session_id` OR `autocommit: true` |
-| `pg_query` | `transaction` | Batch atomic | Atomic (Stateless) |
-| `pg_schema` | `ddl` | Schema changes | **Requires** `session_id` OR `autocommit: true` |
-| `pg_tx` | `begin` | Start session | Returns `session_id` |
-| `pg_tx` | `list` | Discover | List active sessions |
-
 ## Session Lifecycle
 
-- **TTL:** Sessions automatically rollback and close after 30 minutes of inactivity.
-- **Limits:** Maximum 10 concurrent sessions allowed by default.
-- **Cleanup:** Connections are destroyed on close (`client.release(true)`) to ensure zero state leakage (temp tables, session vars).
+- **TTL:** Sessions auto-rollback after 30 minutes of inactivity
+- **Limits:** Maximum 10 concurrent sessions (configurable)
+- **Cleanup:** Connections destroyed on close (no state leakage)
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture and design decisions |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Local setup, testing, debugging |
+| [docs/TOOL_REFERENCE.md](docs/TOOL_REFERENCE.md) | Complete tool API reference |
+| [docs/SECURITY.md](docs/SECURITY.md) | Security model and threat analysis |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+| [DEPLOY.md](DEPLOY.md) | Deployment instructions |
+| [.github/WORKFLOWS.md](.github/WORKFLOWS.md) | CI/CD pipeline documentation |
+
+### Tool Descriptions
+
+Detailed documentation for each tool:
+
+- [pg_query](docs/toolDescriptions/pg_query.md) - Query execution and data manipulation
+- [pg_schema](docs/toolDescriptions/pg_schema.md) - Schema introspection and DDL
+- [pg_admin](docs/toolDescriptions/pg_admin.md) - Maintenance and administration
+- [pg_tx](docs/toolDescriptions/pg_tx.md) - Transaction lifecycle management
+- [pg_monitor](docs/toolDescriptions/pg_monitor.md) - Database observability
 
 ## Testing
 
-To run tests with an automated database lifecycle (start container, test, stop container):
 ```bash
+# Run tests with automated database lifecycle
 npm run test:ci
-```
 
-If you prefer to manage the database manually:
-```bash
+# Manual database management
 docker compose up -d
 npm test
 docker compose down
 ```
+
+## License
+
+MIT
