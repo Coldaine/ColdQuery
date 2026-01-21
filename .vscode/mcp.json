@@ -1,0 +1,16 @@
+{
+    "servers": {
+        "coldquery": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["--yes", "tsx", "packages/core/src/server.ts"],
+            "env": {
+                "PGHOST": "localhost",
+                "PGPORT": "5433",
+                "PGUSER": "mcp",
+                "PGPASSWORD": "mcp",
+                "PGDATABASE": "mcp_test"
+            }
+        }
+    }
+}

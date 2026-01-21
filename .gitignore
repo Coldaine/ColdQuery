@@ -21,7 +21,8 @@ test_output*.txt
 
 # Editor/IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 *.swp
 *.swo
 *~
