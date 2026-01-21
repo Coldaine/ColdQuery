@@ -2,13 +2,13 @@ import { z } from "zod";
 import { ActionHandler } from "../../types.js";
 
 export const MaintenanceSchema = z.object({
-    action: z.enum(["vacuum", "analyze", "reindex"]),
-    target: z.string().optional(),
+    action: z.enum(["vacuum", "analyze", "reindex"]).describe("Maintenance action: vacuum (reclaim storage), analyze (update stats), reindex (rebuild indexes)"),
+    target: z.string().optional().describe("Table name to operate on. If omitted, applies to all tables (except reindex which requires a target)"),
     options: z.object({
-        full: z.boolean().optional(),
-        verbose: z.boolean().optional(),
-        analyze: z.boolean().optional(),
-    }).optional(),
+        full: z.boolean().optional().describe("Use VACUUM FULL (completely rewrites table, requires exclusive lock)"),
+        verbose: z.boolean().optional().describe("Output detailed progress information"),
+        analyze: z.boolean().optional().describe("Run ANALYZE after VACUUM to update statistics"),
+    }).optional().describe("Maintenance operation options"),
 });
 
 export const maintenanceHandler: ActionHandler<typeof MaintenanceSchema> = {

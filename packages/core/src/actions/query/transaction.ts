@@ -2,11 +2,11 @@ import { z } from "zod";
 import { ActionHandler } from "../../types.js";
 
 export const TransactionSchema = z.object({
-    action: z.literal("transaction"),
+    action: z.literal("transaction").describe("Transaction action - execute multiple statements atomically"),
     operations: z.array(z.object({
         sql: z.string().describe("SQL statement to execute"),
-        params: z.array(z.unknown()).optional().describe("Query parameters"),
-    })).min(1).describe("Array of SQL statements to execute atomically in a single transaction"),
+        params: z.array(z.unknown()).optional().describe("Query parameters for this statement"),
+    })).min(1).describe("Array of SQL statements to execute atomically in a single transaction. All succeed or all fail."),
 });
 
 /**

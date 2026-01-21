@@ -4,10 +4,10 @@ import { Logger } from "../../logger.js";
 import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
 
 export const SettingsSchema = z.object({
-    action: z.literal("settings"),
-    subaction: z.enum(["list", "get", "set"]).default("list"),
-    target: z.string().optional(),
-    value: z.string().optional(),
+    action: z.literal("settings").describe("Settings action - view or modify PostgreSQL configuration parameters"),
+    subaction: z.enum(["list", "get", "set"]).default("list").describe("Sub-action: list (browse settings), get (specific setting), set (modify setting)"),
+    target: z.string().optional().describe("Setting name (for get/set) or category filter pattern (for list, e.g., 'memory')"),
+    value: z.string().optional().describe("New value for the setting (required for 'set' subaction)"),
     session_id: z.string().optional().describe("Session ID for transactional settings. Use to set session-local variables."),
     autocommit: z.boolean().optional().describe("Set to true to execute immediately. Required for 'set' if no session_id is provided."),
 });

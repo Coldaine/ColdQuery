@@ -3,11 +3,11 @@ import { ActionHandler, resolveExecutor } from "../../types.js";
 import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
 
 export const TxSchema = z.object({
-    action: z.enum(["begin", "commit", "rollback", "savepoint", "release", "list"]),
-    session_id: z.string().optional().describe("Transaction Session ID. REQUIRED for commit, rollback, savepoint. Use the ID returned by 'begin'."),
-    name: z.string().optional().describe("Savepoint identifier name"),
+    action: z.enum(["begin", "commit", "rollback", "savepoint", "release", "list"]).describe("Transaction action: begin (start), commit (save), rollback (discard), savepoint/release (nested checkpoints), list (active sessions)"),
+    session_id: z.string().optional().describe("Transaction Session ID. REQUIRED for commit, rollback, savepoint, release. Use the ID returned by 'begin'."),
+    name: z.string().optional().describe("Savepoint identifier name (required for savepoint and release actions)"),
     options: z.object({
-        isolation_level: z.enum(["read_uncommitted", "read_committed", "repeatable_read", "serializable"]).optional(),
+        isolation_level: z.enum(["read_uncommitted", "read_committed", "repeatable_read", "serializable"]).optional().describe("Transaction isolation level (only used with 'begin' action). Default: read_committed"),
     }).optional().describe("Transaction options (only used with 'begin' action)"),
 });
 

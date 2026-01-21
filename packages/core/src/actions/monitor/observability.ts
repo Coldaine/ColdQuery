@@ -3,12 +3,12 @@ import { ActionHandler } from "../../types.js";
 import { Logger } from "../../logger.js";
 
 export const ObservabilitySchema = z.object({
-    action: z.enum(["connections", "locks", "size", "activity"]),
+    action: z.enum(["connections", "locks", "size", "activity"]).describe("Observability action: connections (by database/state), locks (active), size (tables/database), activity (running queries)"),
     options: z.object({
-        database: z.string().optional(),
-        schema: z.string().optional(),
-        include_idle: z.boolean().optional(),
-    }).optional(),
+        database: z.string().optional().describe("Filter by database name (for size action to get specific database size)"),
+        schema: z.string().optional().describe("Filter by schema name"),
+        include_idle: z.boolean().optional().describe("Include idle connections in activity/connections results (default: false)"),
+    }).optional().describe("Filtering options for observability queries"),
 });
 
 export const observabilityHandler: ActionHandler<typeof ObservabilitySchema> = {

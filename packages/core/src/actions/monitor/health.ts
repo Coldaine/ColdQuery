@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ActionHandler } from "../../types.js";
 
 export const HealthSchema = z.object({
-    action: z.literal("health"),
+    action: z.literal("health").describe("Health action - quick database connectivity and version check"),
 });
 
 export const healthHandler: ActionHandler<typeof HealthSchema> = {

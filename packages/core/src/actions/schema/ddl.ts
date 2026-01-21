@@ -4,18 +4,18 @@ import { sanitizeIdentifier } from "@pg-mcp/shared/security/identifiers.js";
 import { QueryExecutor } from "@pg-mcp/shared/executor/interface.js";
 
 export const DDLSchema = z.object({
-    action: z.enum(["create", "alter", "drop"]),
-    target: z.enum(["table", "index", "view", "function", "trigger", "schema"]),
+    action: z.enum(["create", "alter", "drop"]).describe("DDL action: create new objects, alter existing ones, or drop them"),
+    target: z.enum(["table", "index", "view", "function", "trigger", "schema"]).describe("Type of object to modify. Implemented: table, index, view for create; table for alter; table, view, index, schema for drop"),
     name: z.string().describe("Name of the object to create/alter/drop"),
-    schema: z.string().optional().describe("Target schema name"),
+    schema: z.string().optional().describe("Target schema name (omit to use 'public')"),
     session_id: z.string().optional().describe("Session ID for transactional DDL. Required for schema changes within a transaction."),
     autocommit: z.boolean().optional().describe("Set to true to execute DDL immediately without a transaction. Required if session_id is not provided."),
-    definition: z.string().optional().describe("Object definition SQL (e.g. column list for table, select for view)"),
+    definition: z.string().optional().describe("Object definition SQL (e.g., 'id SERIAL PRIMARY KEY, name TEXT' for table, 'SELECT ...' for view)"),
     options: z.object({
-        cascade: z.boolean().optional(),
-        if_exists: z.boolean().optional(),
-        if_not_exists: z.boolean().optional(),
-    }).optional(),
+        cascade: z.boolean().optional().describe("Use CASCADE to drop dependent objects (for drop action)"),
+        if_exists: z.boolean().optional().describe("Add IF EXISTS to prevent error if object doesn't exist (for drop)"),
+        if_not_exists: z.boolean().optional().describe("Add IF NOT EXISTS to prevent error if object already exists (for create)"),
+    }).optional().describe("DDL options for conditional execution"),
 });
 
 /**

@@ -2,10 +2,10 @@ import { z } from "zod";
 import { ActionHandler, resolveExecutor } from "../../types.js";
 
 export const DescribeSchema = z.object({
-    action: z.literal("describe"),
-    target: z.enum(["table", "view", "function", "trigger", "sequence"]),
+    action: z.literal("describe").describe("Describe action - get detailed structure of a database object"),
+    target: z.enum(["table", "view", "function", "trigger", "sequence"]).describe("Type of object to describe. Currently implemented: table"),
     name: z.string().describe("Name of the object to describe"),
-    schema: z.string().optional().describe("Schema where the object resides"),
+    schema: z.string().optional().describe("Schema where the object resides (defaults to 'public')"),
     session_id: z.string().optional().describe("Session ID. Required to describe objects created in uncommitted transactions."),
 });
 

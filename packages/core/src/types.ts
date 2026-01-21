@@ -23,6 +23,10 @@ export interface ToolDefinition {
     config: {
         description: string;
         inputSchema: z.ZodTypeAny;
+        /** Suggests that this tool only reads data and has no side effects */
+        readOnlyHint?: boolean;
+        /** Suggests that this tool may destroy data or have significant side effects */
+        destructiveHint?: boolean;
     };
     handler: (context: ActionContext) => (params: any) => Promise<any>;
 }

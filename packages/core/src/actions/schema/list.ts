@@ -2,17 +2,17 @@ import { z } from "zod";
 import { ActionHandler, resolveExecutor } from "../../types.js";
 
 export const ListSchema = z.object({
-    action: z.literal("list"),
-    target: z.enum(["database", "schema", "table", "column", "index", "view", "function", "trigger", "sequence", "constraint"]),
-    schema: z.string().optional().describe("Filter by schema name"),
-    table: z.string().optional().describe("Filter by table name (only applies to some targets)"),
+    action: z.literal("list").describe("List action - enumerate database objects"),
+    target: z.enum(["database", "schema", "table", "column", "index", "view", "function", "trigger", "sequence", "constraint"]).describe("Type of database object to list. Implemented: schema, table, view, function, trigger, sequence, constraint"),
+    schema: z.string().optional().describe("Filter by schema name (defaults to 'public' for tables)"),
+    table: z.string().optional().describe("Filter by table name (for constraints, triggers, columns)"),
     session_id: z.string().optional().describe("Session ID. Required to list objects created in uncommitted transactions."),
     options: z.object({
-        include_sizes: z.boolean().optional(),
-        include_materialized: z.boolean().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
-    }).optional(),
+        include_sizes: z.boolean().optional().describe("Include size information for tables"),
+        include_materialized: z.boolean().optional().describe("Include materialized views when listing views (default: true)"),
+        limit: z.number().optional().describe("Maximum number of results to return"),
+        offset: z.number().optional().describe("Number of results to skip (for pagination)"),
+    }).optional().describe("Query options for filtering and pagination"),
 });
 
 /**

@@ -27,8 +27,25 @@ export async function pgMonitorHandler(params: any, context: ActionContext) {
 export const pgMonitorTool: ToolDefinition = {
     name: "pg_monitor",
     config: {
-        description: "Database observability (connections, locks, size, activity, health)",
+        description: `Database observability and health monitoring (read-only).
+
+Actions:
+  • health: Quick database health check (version, connection status, server time)
+  • activity: View currently running queries (excludes idle by default)
+  • connections: Connection counts grouped by database and state
+  • locks: Active lock information for debugging contention
+  • size: Table sizes (top 20) or specific database size
+
+This tool is purely read-only and safe to call at any time.
+Useful for debugging performance issues, monitoring activity, and capacity planning.
+
+Examples:
+  {"action": "health"}
+  {"action": "activity"}
+  {"action": "size"}
+  {"action": "size", "options": {"database": "mydb"}}`,
         inputSchema: PgMonitorToolSchema,
+        readOnlyHint: true, // All actions are read-only observability queries
     },
     handler: (context) => (params) => pgMonitorHandler(params, context),
 };

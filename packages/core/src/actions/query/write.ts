@@ -2,14 +2,14 @@ import { z } from "zod";
 import { ActionHandler, resolveExecutor } from "../../types.js";
 
 export const WriteSchema = z.object({
-    action: z.literal("write"),
-    sql: z.string(),
-    params: z.array(z.unknown()).optional(),
+    action: z.literal("write").describe("Write action - execute INSERT/UPDATE/DELETE statements"),
+    sql: z.string().describe("SQL DML statement (INSERT, UPDATE, DELETE)"),
+    params: z.array(z.unknown()).optional().describe("Parameterized query values (use $1, $2, etc. in SQL)"),
     session_id: z.string().optional().describe("Session ID returned by pg_tx 'begin'. REQUIRED for transactional writes."),
     autocommit: z.boolean().optional().describe("Set to true to execute a single-statement write immediately without a transaction. REQUIRED if session_id is not provided."),
     options: z.object({
-        timeout_ms: z.number().optional(),
-    }).optional(),
+        timeout_ms: z.number().optional().describe("Query timeout in milliseconds"),
+    }).optional().describe("Query execution options"),
 });
 
 export const writeHandler: ActionHandler<typeof WriteSchema> = {

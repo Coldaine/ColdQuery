@@ -57,9 +57,18 @@ const tools = [
 
 for (const tool of tools) {
     Logger.info(`registering tool: ${tool.name}`);
+
+    const { description, inputSchema, readOnlyHint, destructiveHint } = tool.config;
+
     server.registerTool(
         tool.name,
-        tool.config,
+        {
+            description,
+            inputSchema,
+            ...(readOnlyHint !== undefined || destructiveHint !== undefined
+                ? { annotations: { readOnlyHint, destructiveHint } }
+                : {}),
+        },
         async (params) => {
             const rawResult = await tool.handler(context)(params);
             const result = wrapResponse(rawResult, params, tool.name, sessionManager);
