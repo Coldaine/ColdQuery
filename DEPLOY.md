@@ -34,17 +34,17 @@ ssh coldaine@raspberryoracle
 docker stop coldquery 2>/dev/null || true
 docker rm coldquery 2>/dev/null || true
 
-# Start new container
+# Start new container (connects to postgres_network for DB access)
 docker run -d \
   --name coldquery \
   --restart unless-stopped \
+  --network postgres_network \
   -p 19002:3000 \
-  -e POSTGRES_HOST=localhost \
-  -e POSTGRES_PORT=5432 \
-  -e POSTGRES_USER=coldaine \
-  -e POSTGRES_PASSWORD=<your-password> \
-  -e POSTGRES_DATABASE=coldaine \
-  --network host \
+  -e PGHOST=llm_postgres \
+  -e PGPORT=5432 \
+  -e PGUSER=llm_archival \
+  -e PGPASSWORD=<your-password> \
+  -e PGDATABASE=llm_archival \
   coldquery:VERSION
 ```
 
@@ -68,11 +68,11 @@ docker logs coldquery
 | `HOST` | `0.0.0.0` | Server bind address |
 | `PORT` | `3000` | Server port (internal) |
 | `NODE_ENV` | `production` | Node environment |
-| `POSTGRES_HOST` | - | PostgreSQL host |
-| `POSTGRES_PORT` | `5432` | PostgreSQL port |
-| `POSTGRES_USER` | - | PostgreSQL user |
-| `POSTGRES_PASSWORD` | - | PostgreSQL password |
-| `POSTGRES_DATABASE` | - | PostgreSQL database name |
+| `PGHOST` | `localhost` | PostgreSQL host |
+| `PGPORT` | `5432` | PostgreSQL port |
+| `PGUSER` | `postgres` | PostgreSQL user |
+| `PGPASSWORD` | - | PostgreSQL password |
+| `PGDATABASE` | `postgres` | PostgreSQL database name |
 
 ## MCP Client Configuration
 
@@ -113,7 +113,7 @@ docker exec coldquery ls -la dist/packages/core/src/
 
 ### Can't connect from network
 
-- Ensure `--network host` is used (for localhost PostgreSQL access)
+- Ensure container is on `postgres_network` (for PostgreSQL access via Docker DNS)
 - Check firewall rules on Pi: `sudo iptables -L`
 - Verify Tailscale is running if using Tailscale IP
 
@@ -138,5 +138,7 @@ The automated deployment requires these secrets in your GitHub repository:
 |--------|-------------|
 | `PI_SSH_PRIVATE_KEY` | SSH private key for raspberryoracle |
 | `PI_POSTGRES_PASSWORD` | PostgreSQL password |
+| `TS_OAUTH_CLIENT_ID` | Tailscale OAuth client ID |
+| `TS_OAUTH_SECRET` | Tailscale OAuth client secret |
 
 Configure at: `https://github.com/Coldaine/ColdQuery/settings/secrets/actions`

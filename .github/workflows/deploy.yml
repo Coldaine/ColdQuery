@@ -7,7 +7,7 @@ on:
 
 env:
   IMAGE_NAME: coldquery
-  PI_HOST: raspberryoracle
+  PI_HOST: 100.65.198.61
   PI_USER: coldaine
   CONTAINER_NAME: coldquery
   CONTAINER_PORT: 19002
@@ -50,11 +50,11 @@ jobs:
 
       - name: Transfer image to Pi
         run: |
-          gzip -c image.tar | ssh -o StrictHostKeyChecking=no ${{ env.PI_USER }}@${{ env.PI_HOST }} 'gunzip | docker load'
+          gzip -c image.tar | ssh ${{ env.PI_USER }}@${{ env.PI_HOST }} 'gunzip | docker load'
 
       - name: Deploy container
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ env.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+          ssh ${{ env.PI_USER }}@${{ env.PI_HOST }} <<EOF
             # Stop and remove existing container
             docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
             docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
@@ -63,13 +63,13 @@ jobs:
             docker run -d \
               --name ${{ env.CONTAINER_NAME }} \
               --restart unless-stopped \
+              --network postgres_network \
               -p ${{ env.CONTAINER_PORT }}:3000 \
-              -e POSTGRES_HOST=localhost \
-              -e POSTGRES_PORT=5432 \
-              -e POSTGRES_USER=coldaine \
-              -e POSTGRES_PASSWORD=${{ secrets.PI_POSTGRES_PASSWORD }} \
-              -e POSTGRES_DATABASE=coldaine \
-              --network host \
+              -e PGHOST=llm_postgres \
+              -e PGPORT=5432 \
+              -e PGUSER=llm_archival \
+              -e PGPASSWORD=${{ secrets.PI_POSTGRES_PASSWORD }} \
+              -e PGDATABASE=llm_archival \
               ${{ env.IMAGE_NAME }}:latest
 
             # Wait for container to be healthy
@@ -79,7 +79,7 @@ jobs:
                 echo "Container is healthy!"
                 exit 0
               fi
-              echo "Attempt $i/30 - waiting..."
+              echo "Attempt \$i/30 - waiting..."
               sleep 2
             done
             echo "Health check failed"
@@ -89,7 +89,7 @@ jobs:
 
       - name: Cleanup old images on Pi
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ env.PI_USER }}@${{ env.PI_HOST }} 'docker image prune -f'
+          ssh ${{ env.PI_USER }}@${{ env.PI_HOST }} 'docker image prune -f'
 
       - name: Cleanup local artifacts
         if: always()
