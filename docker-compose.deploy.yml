@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: coldquery-tailscale
+    hostname: svc-coldquery
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+    volumes:
+      - tailscale-data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: unless-stopped
+
+  coldquery:
+    image: coldquery:latest
+    container_name: coldquery
+    network_mode: service:tailscale
+    depends_on:
+      - tailscale
+    environment:
+      - PGHOST=svc.config-db
+      - PGPORT=5432
+      - PGUSER=llm_archival
+      - PGPASSWORD=${PGPASSWORD}
+      - PGDATABASE=llm_archival
+      - PORT=3000
+      - NODE_ENV=production
+    restart: unless-stopped
+
+volumes:
+  tailscale-data:
