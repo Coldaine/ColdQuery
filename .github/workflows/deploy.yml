@@ -9,8 +9,6 @@ env:
   IMAGE_NAME: coldquery
   PI_HOST: 100.65.198.61
   PI_USER: coldaine
-  CONTAINER_NAME: coldquery
-  CONTAINER_PORT: 19002
 
 jobs:
   build-and-deploy:
@@ -52,30 +50,30 @@ jobs:
         run: |
           gzip -c image.tar | ssh ${{ env.PI_USER }}@${{ env.PI_HOST }} 'gunzip | docker load'
 
-      - name: Deploy container
+      - name: Copy docker-compose.deploy.yml
+        run: |
+          scp docker-compose.deploy.yml ${{ env.PI_USER }}@${{ env.PI_HOST }}:~/coldquery/docker-compose.yml
+
+      - name: Deploy with Docker Compose
         run: |
           ssh ${{ env.PI_USER }}@${{ env.PI_HOST }} <<EOF
-            # Stop and remove existing container
-            docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
-            docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+            cd ~/coldquery
 
-            # Run new container
-            docker run -d \
-              --name ${{ env.CONTAINER_NAME }} \
-              --restart unless-stopped \
-              --network postgres_network \
-              -p ${{ env.CONTAINER_PORT }}:3000 \
-              -e PGHOST=llm_postgres \
-              -e PGPORT=5432 \
-              -e PGUSER=llm_archival \
-              -e PGPASSWORD=${{ secrets.PI_POSTGRES_PASSWORD }} \
-              -e PGDATABASE=llm_archival \
-              ${{ env.IMAGE_NAME }}:latest
+            # Export secrets as env vars
+            export TAILSCALE_AUTH_KEY=${{ secrets.TAILSCALE_AUTH_KEY }}
+            export PGPASSWORD=${{ secrets.PI_POSTGRES_PASSWORD }}
+
+            # Login to Docker (if needed, but we used load)
+
+            # Start services
+            docker-compose down
+            docker-compose up -d
 
             # Wait for container to be healthy
             echo "Waiting for health check..."
+            # Note: Health check inside the container might still refer to localhost:3000
             for i in {1..30}; do
-              if docker exec ${{ env.CONTAINER_NAME }} wget --no-verbose --tries=1 --spider http://localhost:3000/health 2>/dev/null; then
+              if docker exec coldquery wget --no-verbose --tries=1 --spider http://localhost:3000/health 2>/dev/null; then
                 echo "Container is healthy!"
                 exit 0
               fi
@@ -83,7 +81,7 @@ jobs:
               sleep 2
             done
             echo "Health check failed"
-            docker logs ${{ env.CONTAINER_NAME }}
+            docker logs coldquery
             exit 1
           EOF
 
