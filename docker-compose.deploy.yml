@@ -6,23 +6,18 @@ services:
     container_name: coldquery-tailscale
     hostname: coldquery-mcp
     environment:
-      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_AUTHKEY=${TAILSCALE_AUTH_KEY}
       - TS_STATE_DIR=/var/lib/tailscale
-      - TS_EXTRA_ARGS=--advertise-tags=tag:server --hostname=coldquery-mcp
+      - TS_EXTRA_ARGS=--advertise-tags=tag:server
     volumes:
       - tailscale-data:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
     cap_add:
       - NET_ADMIN
       - NET_RAW
+    # Wait for tailscaled to start, then run serve
+    command: sh -c "tailscaled --tun=userspace-networking --socks5-server=localhost:1055 & sleep 5; tailscale up --authkey=${TAILSCALE_AUTH_KEY} --hostname=coldquery-mcp; tailscale serve --bg 3000; wait"
     restart: unless-stopped
-    entrypoint: >
-      sh -c "
-      /usr/local/bin/containerboot &
-      sleep 10 &&
-      tailscale serve --bg --https=443 http://localhost:3000 &&
-      wait
-      "
 
   coldquery:
     image: coldquery:latest

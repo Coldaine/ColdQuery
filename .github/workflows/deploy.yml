@@ -60,7 +60,7 @@ jobs:
             cd ~/coldquery
 
             # Export secrets as env vars
-            export TS_AUTHKEY=${{ secrets.TAILSCALE_AUTH_KEY }}
+            export TAILSCALE_AUTH_KEY=${{ secrets.TAILSCALE_AUTH_KEY }}
             export PGPASSWORD=${{ secrets.PI_POSTGRES_PASSWORD }}
 
             # Login to Docker (if needed, but we used load)
