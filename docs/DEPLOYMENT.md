@@ -130,9 +130,26 @@ Add to your MCP client configuration (e.g., `.mcp.json`):
 }
 ```
 
-### Tailscale URL
+### Tailscale Serve (Recommended)
 
-If using Tailscale for access:
+ColdQuery is deployed on `raspberryoracle` with Tailscale Serve, providing HTTPS access within the tailnet:
+
+```json
+{
+  "mcpServers": {
+    "coldquery": {
+      "type": "http",
+      "url": "https://raspberryoracle.tail4c911d.ts.net/mcp"
+    }
+  }
+}
+```
+
+**Live deployment**: `https://raspberryoracle.tail4c911d.ts.net/mcp` (tailnet only)
+
+### Tailscale Raw IP (Alternative)
+
+If Tailscale Serve isn't configured, use the raw Tailscale IP:
 
 ```json
 {
