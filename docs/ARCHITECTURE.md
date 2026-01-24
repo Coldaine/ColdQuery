@@ -139,6 +139,17 @@ z.discriminatedUnion("action", [ReadSchema, WriteSchema, ExplainSchema])
 
 ---
 
+## FastMCP Components
+
+We use FastMCP 3.0 architectural patterns:
+- **Tools**: For actions (query, schema mod).
+- **Resources**: For exposing state (schema).
+- **Prompts**: For guided interactions (analyze query).
+
+This aligns with the Model Context Protocol's component-based architecture, allowing the LLM to access data as resources and use prompts as templates for complex tasks.
+
+---
+
 ## Plugin Registration Pattern
 
 **Location:** `packages/core/src/server.ts`

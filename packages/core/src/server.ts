@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 import { FastMCP } from "fastmcp";
 import { PostgresExecutor } from "@pg-mcp/shared/executor/postgres.js";
 import { Logger } from "./logger.js";
@@ -7,6 +8,8 @@ import { pgSchemaHandler, PgSchemaToolSchema } from "./tools/pg-schema.js";
 import { pgAdminHandler, PgAdminToolSchema } from "./tools/pg-admin.js";
 import { pgMonitorHandler, PgMonitorToolSchema } from "./tools/pg-monitor.js";
 import { pgTxHandler, PgTxToolSchema } from "./tools/pg-tx.js";
+import { createSchemaResource } from "./resources/schema.js";
+import { analyzeQueryPrompt } from "./prompts/analyze-query.js";
 import type { ActionContext } from "./types.js";
 import { wrapResponse } from "./middleware/session-echo.js";
 
@@ -32,7 +35,7 @@ const executor = new PostgresExecutor({
 const sessionManager = new SessionManager(executor);
 const actionContext: ActionContext = { executor, sessionManager };
 
-const server = new FastMCP({
+export const server = new FastMCP({
     name: "coldquery",
     version: "0.2.0",
     instructions: `ColdQuery is a PostgreSQL MCP server providing database management tools.
@@ -46,6 +49,12 @@ Available tools:
 
 Safety: Write operations require explicit session_id or autocommit:true.`,
 });
+
+// Register resources
+server.addResource(createSchemaResource(executor));
+
+// Register prompts
+server.addPrompt(analyzeQueryPrompt as any);
 
 // Register pg_query tool
 server.addTool({
@@ -151,24 +160,27 @@ Actions:
     },
 });
 
-// Determine transport type
-const transportType = process.argv.includes("--transport")
-    ? process.argv[process.argv.indexOf("--transport") + 1]
-    : "stdio";
+// Only start if running directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    // Determine transport type
+    const transportType = process.argv.includes("--transport")
+        ? process.argv[process.argv.indexOf("--transport") + 1]
+        : "stdio";
 
-if (transportType === "sse" || transportType === "http") {
-    const port = parseInt(process.env['PORT'] || "3000");
-    const host = process.env['HOST'] || "0.0.0.0";
+    if (transportType === "sse" || transportType === "http") {
+        const port = parseInt(process.env['PORT'] || "3000");
+        const host = process.env['HOST'] || "0.0.0.0";
 
-    server.start({
-        transportType: "httpStream",
-        httpStream: {
-            port,
-            // FastMCP uses 0.0.0.0 by default
-        },
-    });
-    Logger.info(`ColdQuery HTTP Server running on http://${host}:${port}`);
-} else {
-    server.start({ transportType: "stdio" });
-    Logger.info("ColdQuery running on stdio");
+        server.start({
+            transportType: "httpStream",
+            httpStream: {
+                port,
+                // FastMCP uses 0.0.0.0 by default
+            },
+        });
+        Logger.info(`ColdQuery HTTP Server running on http://${host}:${port}`);
+    } else {
+        server.start({ transportType: "stdio" });
+        Logger.info("ColdQuery running on stdio");
+    }
 }
