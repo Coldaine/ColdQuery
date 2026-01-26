@@ -12,14 +12,20 @@ const queryRegistry: ActionRegistry = {
     transaction: transactionHandler,
 };
 
-export const PgQuerySchema = z.discriminatedUnion("action", [
-    readHandler.schema,
-    writeHandler.schema,
-    explainHandler.schema,
-    transactionHandler.schema,
-]);
+export const PgQuerySchema = z.object({
+    action: z.enum(["read", "write", "explain", "transaction"]).describe("Action to perform: read (SELECT), write (INSERT/UPDATE/DELETE), explain (query plan), transaction (batch)"),
+    sql: z.string().optional().describe("SQL query to execute (required for read, write, explain)"),
+    params: z.array(z.any()).optional().describe("Query parameters ($1, $2, etc.) for parameterized queries"),
+    analyze: z.boolean().optional().describe("Run EXPLAIN ANALYZE (only for 'explain' action)"),
+    operations: z.array(z.object({
+        sql: z.string(),
+        params: z.array(z.any()).optional()
+    })).optional().describe("List of operations for transaction batch (only for 'transaction' action)"),
+    session_id: z.string().optional().describe("Session ID for transactional context"),
+    autocommit: z.boolean().optional().describe("Set to true to allow write/transaction operations without an explicit session"),
+});
 
-export async function pgQueryHandler(params: z.infer<typeof PgQuerySchema>, context: ActionContext) {
+export async function pgQueryHandler(params: any, context: ActionContext) {
     const handler = queryRegistry[params.action];
     if (!handler) {
         throw new Error(`Unknown action: ${params.action}`);

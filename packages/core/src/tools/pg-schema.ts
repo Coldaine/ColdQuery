@@ -12,11 +12,27 @@ const schemaRegistry: ActionRegistry = {
     drop: ddlHandler,
 };
 
-export const PgSchemaToolSchema = z.discriminatedUnion("action", [
-    listHandler.schema,
-    describeHandler.schema,
-    ddlHandler.schema,
-]);
+export const PgSchemaToolSchema = z.object({
+    action: z.enum(["list", "describe", "create", "alter", "drop"]).describe("Action to perform on schema objects"),
+    target: z.enum(["database", "schema", "table", "column", "index", "view", "function", "trigger", "sequence", "constraint"]).describe("Target object type"),
+    schema: z.string().optional().describe("Schema name (filter for list, or target schema for others)"),
+    name: z.string().optional().describe("Object name (required for describe, create, alter, drop)"),
+    definition: z.string().optional().describe("SQL definition body (for create/alter, e.g. column defs or view query)"),
+    table: z.string().optional().describe("Parent table name (filter for list triggers/constraints)"),
+    session_id: z.string().optional().describe("Session ID for transactional operations"),
+    autocommit: z.boolean().optional().describe("Execute DDL immediately (required if no session_id provided)"),
+    options: z.object({
+        // List options
+        include_sizes: z.boolean().optional().describe("Include table sizes in list output"),
+        include_materialized: z.boolean().optional().describe("Include materialized views when listing views"),
+        limit: z.number().optional().describe("Max results to return (list)"),
+        offset: z.number().optional().describe("Pagination offset (list)"),
+        // DDL options
+        cascade: z.boolean().optional().describe("Use CASCADE to drop dependent objects (drop)"),
+        if_exists: z.boolean().optional().describe("Add IF EXISTS (drop)"),
+        if_not_exists: z.boolean().optional().describe("Add IF NOT EXISTS (create)"),
+    }).optional().describe("Options for list or DDL operations"),
+});
 
 export async function pgSchemaHandler(params: any, context: ActionContext) {
     const handler = schemaRegistry[params.action];

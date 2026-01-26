@@ -11,10 +11,14 @@ const monitorRegistry: ActionRegistry = {
     activity: observabilityHandler,
 };
 
-export const PgMonitorToolSchema = z.discriminatedUnion("action", [
-    healthHandler.schema,
-    observabilityHandler.schema,
-]);
+export const PgMonitorToolSchema = z.object({
+    action: z.enum(["health", "connections", "locks", "size", "activity"]).describe("Monitoring action: health (check), connections (count), locks (active), size (DB/table), activity (queries)"),
+    options: z.object({
+        database: z.string().optional().describe("Filter by database name (for size action)"),
+        schema: z.string().optional().describe("Filter by schema name"),
+        include_idle: z.boolean().optional().describe("Include idle connections in results (default: false)"),
+    }).optional().describe("Filtering options for observability queries"),
+});
 
 export async function pgMonitorHandler(params: any, context: ActionContext) {
     const handler = monitorRegistry[params.action];
