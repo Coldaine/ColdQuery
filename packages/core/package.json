@@ -6,7 +6,7 @@
     "dependencies": {
         "@pg-mcp/shared": "*",
         "commander": "^14.0.0",
-        "fastmcp": "^3.28.0",
+        "fastmcp": "^3.30.0",
         "jose": "^6.1.3",
         "pg": "^8.17.0",
         "zod": "^4.3.5"

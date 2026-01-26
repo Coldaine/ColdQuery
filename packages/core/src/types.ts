@@ -27,6 +27,12 @@ export interface ToolDefinition {
         readOnlyHint?: boolean;
         /** Suggests that this tool may destroy data or have significant side effects */
         destructiveHint?: boolean;
+        /** A human-readable title for the tool, useful for UI display */
+        title?: string;
+        /** Suggests that calling this tool repeatedly with the same arguments has no additional effect */
+        idempotentHint?: boolean;
+        /** Suggests that the tool may interact with an "open world" of external entities */
+        openWorldHint?: boolean;
     };
     handler: (context: ActionContext) => (params: any) => Promise<any>;
 }

@@ -15,6 +15,13 @@ ColdQuery is an MCP (Model Context Protocol) server that exposes PostgreSQL oper
 
 ## System Architecture
 
+### Framework: FastMCP 3.0
+
+ColdQuery leverages **FastMCP 3.0** (TypeScript) to implement the Model Context Protocol. This provides:
+- **Built-in Session Management**: Handles `context.sessionId` automatically.
+- **Tool Annotations**: Uses standardized hints like `title`, `readOnlyHint`, `destructiveHint`, and `openWorldHint` to help LLMs understand tool behavior.
+- **HTTP Streaming**: Native support for high-performance streaming transports.
+
 ```
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
 │ Claude Code      │  │ VS Code + Cline  │  │ Cursor           │

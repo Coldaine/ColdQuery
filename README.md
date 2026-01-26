@@ -1,6 +1,6 @@
 # ColdQuery
 
-A secure, stateful PostgreSQL Model Context Protocol (MCP) server optimized for Agentic AI workflows.
+A secure, stateful PostgreSQL Model Context Protocol (MCP) server optimized for Agentic AI workflows. Built with **FastMCP 3.0**.
 
 ## Quick Start
 
