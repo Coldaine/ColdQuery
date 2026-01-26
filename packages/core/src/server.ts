@@ -164,7 +164,7 @@ if (transportType === "sse" || transportType === "http") {
         transportType: "httpStream",
         httpStream: {
             port,
-            // FastMCP uses 0.0.0.0 by default
+            host,
         },
     });
     Logger.info(`ColdQuery HTTP Server running on http://${host}:${port}`);
