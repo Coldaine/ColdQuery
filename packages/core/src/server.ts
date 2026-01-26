@@ -61,7 +61,11 @@ Actions:
 Safety: Write operations use Default-Deny policy to prevent accidental data corruption.
 Without session_id or autocommit:true, writes will fail with a safety error.`,
     parameters: PgQuerySchema,
-    annotations: { destructiveHint: true },
+    annotations: {
+        title: "Database Query Tool",
+        destructiveHint: true,
+        openWorldHint: true,
+    },
     execute: async (params) => {
         const result = await pgQueryHandler(params, actionContext);
         const wrappedResult = wrapResponse(result, params, "pg_query", sessionManager);
@@ -83,7 +87,11 @@ Actions:
 
 Safety: create/alter/drop are destructive and require explicit confirmation.`,
     parameters: PgSchemaToolSchema,
-    annotations: { destructiveHint: true },
+    annotations: {
+        title: "Database Schema Manager",
+        destructiveHint: true,
+        openWorldHint: true,
+    },
     execute: async (params) => {
         const result = await pgSchemaHandler(params, actionContext);
         const wrappedResult = wrapResponse(result, params, "pg_schema", sessionManager);
@@ -103,7 +111,11 @@ Actions:
   • stats: Get table statistics (row counts, sizes)
   • settings: View/modify PostgreSQL configuration`,
     parameters: PgAdminToolSchema,
-    annotations: { destructiveHint: true },
+    annotations: {
+        title: "Database Administrator",
+        destructiveHint: true,
+        openWorldHint: true,
+    },
     execute: async (params) => {
         const result = await pgAdminHandler(params, actionContext);
         const wrappedResult = wrapResponse(result, params, "pg_admin", sessionManager);
@@ -123,7 +135,11 @@ Actions:
   • size: Show database/table sizes
   • activity: Show active queries`,
     parameters: PgMonitorToolSchema,
-    annotations: { readOnlyHint: true },
+    annotations: {
+        title: "Database Monitor",
+        readOnlyHint: true,
+        openWorldHint: true,
+    },
     execute: async (params) => {
         const result = await pgMonitorHandler(params, actionContext);
         const wrappedResult = wrapResponse(result, params, "pg_monitor", sessionManager);
@@ -144,6 +160,10 @@ Actions:
   • release: Release a savepoint
   • list: List active sessions`,
     parameters: PgTxToolSchema,
+    annotations: {
+        title: "Transaction Manager",
+        openWorldHint: true,
+    },
     execute: async (params) => {
         const result = await pgTxHandler(params, actionContext);
         const wrappedResult = wrapResponse(result, params, "pg_tx", sessionManager);
