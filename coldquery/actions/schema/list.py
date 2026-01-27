@@ -6,10 +6,10 @@ from coldquery.core.executor import resolve_executor
 async def list_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """List database objects."""
     target = params.get("target", "table")
-    schema = params.get("schema")
+    params.get("schema")
     limit = params.get("limit", 100)
     offset = params.get("offset", 0)
-    include_sizes = params.get("include_sizes", False)
+    params.get("include_sizes", False)
     session_id = params.get("session_id")
 
     executor = await resolve_executor(context, session_id)

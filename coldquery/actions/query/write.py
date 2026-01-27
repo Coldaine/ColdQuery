@@ -1,8 +1,7 @@
-import json
 from typing import Any, Dict, List, Optional
 
-from coldquery.core.context import ActionContext
-from coldquery.core.executor import QueryResult, resolve_executor
+from coldquery.core.context import ActionContext, resolve_executor
+from coldquery.core.executor import QueryResult
 from coldquery.middleware.session_echo import enrich_response
 from coldquery.security.access_control import require_write_access
 

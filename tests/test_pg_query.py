@@ -1,5 +1,5 @@
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -9,7 +9,6 @@ from coldquery.actions.query.transaction import transaction_handler
 from coldquery.actions.query.write import write_handler
 from coldquery.core.context import ActionContext
 from coldquery.core.executor import QueryResult
-from coldquery.core.session import SessionData as Session
 from coldquery.core.session import SessionManager
 from coldquery.middleware.session_echo import enrich_response
 from coldquery.tools.pg_query import pg_query

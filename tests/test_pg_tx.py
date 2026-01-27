@@ -29,12 +29,12 @@ async def test_begin_creates_session(mock_context):
 
 @pytest.mark.asyncio
 async def test_commit_closes_session(mock_context):
-    result = await pg_tx(action="commit", session_id="test-session", context=mock_context)
+    await pg_tx(action="commit", session_id="test-session", context=mock_context)
     mock_context.session_manager.close_session.assert_called_once_with("test-session")
 
 @pytest.mark.asyncio
 async def test_rollback_closes_session(mock_context):
-    result = await pg_tx(action="rollback", session_id="test-session", context=mock_context)
+    await pg_tx(action="rollback", session_id="test-session", context=mock_context)
     mock_context.session_manager.close_session.assert_called_once_with("test-session")
 
 @pytest.mark.asyncio

@@ -1,4 +1,3 @@
-import json
 from typing import Dict, Any
 from coldquery.core.context import ActionContext
 from coldquery.core.executor import resolve_executor

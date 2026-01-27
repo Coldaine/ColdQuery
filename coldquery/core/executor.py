@@ -109,21 +109,3 @@ class AsyncpgPoolExecutor:
 
 # Singleton instance
 db_executor = AsyncpgPoolExecutor()
-
-
-async def resolve_executor(
-    context: "ActionContext", session_id: Optional[str]
-) -> "QueryExecutor":
-    """
-    Resolves the appropriate query executor based on the session ID.
-
-    Args:
-        context: The action context.
-        session_id: The session ID, if any.
-
-    Returns:
-        The query executor to use.
-    """
-    if session_id:
-        return context.session_manager.get_session_executor(session_id)
-    return context.executor

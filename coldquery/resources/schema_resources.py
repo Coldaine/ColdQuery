@@ -1,4 +1,3 @@
-from fastmcp import Context
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
 from coldquery.server import mcp
