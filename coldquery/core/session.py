@@ -30,6 +30,12 @@ class SessionManager:
 
         try:
             session_executor = await self._pool_executor.create_session()
+
+            # Double-check after await (race condition protection)
+            if len(self._sessions) >= MAX_SESSIONS:
+                await session_executor.disconnect(destroy=True)
+                raise RuntimeError("Maximum number of concurrent sessions reached.")
+
             session_data = SessionData(session_executor)
             self._sessions[session_id] = session_data
             self._reset_ttl(session_id)

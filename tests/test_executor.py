@@ -6,18 +6,31 @@ from coldquery.core.executor import AsyncpgPoolExecutor, AsyncpgSessionExecutor,
 @pytest.fixture
 def mock_asyncpg_connection():
     mock = MagicMock()
-    mock_result = MagicMock()
-    mock_result.__iter__.return_value = iter([{"id": 1}])
-    mock.fetch = AsyncMock(return_value=mock_result)
+
+    # Create a mock record that behaves like a dict when dict() is called on it
+    mock_record = MagicMock()
+    mock_record.keys.return_value = ["id"]
+    mock_record.__getitem__.side_effect = lambda k: 1 if k == "id" else None
+    mock_record.__iter__.return_value = iter(["id"])
+
+    # Create mock result list with columns attribute
+    mock_result = [mock_record]
+    mock_result_with_columns = MagicMock()
+    mock_result_with_columns.__iter__.return_value = iter(mock_result)
+    mock_result_with_columns.__len__.return_value = 1
+
+    mock_column = MagicMock()
+    mock_column.name = "id"
+    mock_column.type.__name__ = "int4"
+    mock_result_with_columns.columns = [mock_column]
+
+    mock.fetch = AsyncMock(return_value=mock_result_with_columns)
 
     # For DML statements, execute returns a status string
     mock.execute = AsyncMock(return_value="INSERT 0 1")
 
     mock.close = AsyncMock()
-    mock_column = MagicMock()
-    mock_column.name = "id"
-    mock_column.type.__name__ = "int4"
-    mock_result.columns = [mock_column]
+    mock.release = AsyncMock()
     return mock
 
 @pytest.mark.asyncio
@@ -68,6 +81,7 @@ def mock_asyncpg_pool(mock_asyncpg_connection):
 
     acquire_mock = AcquireMock(return_value=mock_asyncpg_connection)
     mock_pool.acquire.return_value = acquire_mock
+    mock_pool.release = AsyncMock()
     mock_pool.close = AsyncMock()
     mock_pool.terminate = AsyncMock()
     return mock_pool

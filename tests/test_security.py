@@ -37,7 +37,9 @@ def test_sanitize_identifier_valid():
     assert sanitize_identifier("my_table") == '"my_table"'
 
 def test_sanitize_identifier_with_quotes():
-    assert sanitize_identifier('table_with_"_quotes') == '"table_with_""_quotes"'
+    # Identifiers with quotes should be rejected during validation
+    with pytest.raises(InvalidIdentifierError):
+        sanitize_identifier('table_with_"_quotes')
 
 def test_sanitize_identifier_invalid():
     with pytest.raises(InvalidIdentifierError):

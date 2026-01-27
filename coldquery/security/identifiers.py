@@ -3,8 +3,8 @@ from typing import Optional
 
 # PostgreSQL identifier max length is 63 characters
 MAX_IDENTIFIER_LENGTH = 63
-# Allow double quotes in the identifier pattern
-IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_$\"]*$")
+# PostgreSQL identifier pattern - letters, digits, underscore, dollar sign
+IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_$]*$")
 
 class InvalidIdentifierError(ValueError):
     """Raised when an identifier is invalid."""
@@ -20,6 +20,8 @@ def validate_identifier(name: str) -> None:
     Raises:
         InvalidIdentifierError: If the identifier is invalid.
     """
+    if not name:
+        raise InvalidIdentifierError("Identifier must be a non-empty string")
     if len(name) > MAX_IDENTIFIER_LENGTH:
         raise InvalidIdentifierError(f"Identifier '{name}' exceeds the maximum length of {MAX_IDENTIFIER_LENGTH} characters.")
     if not IDENTIFIER_PATTERN.match(name):

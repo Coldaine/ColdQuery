@@ -21,8 +21,9 @@ class QueryExecutor(Protocol):
         ...
 
 class AsyncpgSessionExecutor:
-    def __init__(self, connection: asyncpg.Connection):
+    def __init__(self, connection: asyncpg.Connection, pool: Optional[asyncpg.Pool] = None):
         self._connection = connection
+        self._pool = pool
 
     async def execute(self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None) -> QueryResult:
         if timeout_ms:
@@ -54,7 +55,15 @@ class AsyncpgSessionExecutor:
                 await self._connection.execute("SET statement_timeout = 0")
 
     async def disconnect(self, destroy: bool = False) -> None:
-        await self._connection.close()
+        if self._pool:
+            # Release connection back to pool
+            await self._pool.release(self._connection, timeout=1.0 if destroy else None)
+            if destroy:
+                # Terminate the connection to prevent state leaks
+                await self._connection.close()
+        else:
+            # No pool, just close the connection
+            await self._connection.close()
 
     async def create_session(self) -> "QueryExecutor":
         return self
@@ -89,7 +98,7 @@ class AsyncpgPoolExecutor:
     async def create_session(self) -> "QueryExecutor":
         pool = await self._get_pool()
         connection = await pool.acquire()
-        return AsyncpgSessionExecutor(connection)
+        return AsyncpgSessionExecutor(connection, pool)
 
 # Singleton instance
 db_executor = AsyncpgPoolExecutor()
