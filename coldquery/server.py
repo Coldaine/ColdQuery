@@ -45,8 +45,9 @@ async def health(request):
 
 
 if __name__ == "__main__":
-    # Import tools to register them before running
-    from coldquery.tools import pg_query  # noqa: F401
+    # Import all tools to register them
+    from coldquery.tools import pg_query, pg_tx, pg_schema, pg_admin, pg_monitor  # noqa: F401
+    from coldquery import resources, prompts  # noqa: F401
 
     transport = (
         "http" if "--transport" in sys.argv and "http" in sys.argv else "stdio"

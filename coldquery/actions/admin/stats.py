@@ -1,0 +1,31 @@
+import json
+from typing import Dict, Any
+from coldquery.core.context import ActionContext
+from coldquery.core.executor import resolve_executor
+from coldquery.security.identifiers import sanitize_identifier
+
+async def stats_handler(params: Dict[str, Any], context: ActionContext) -> str:
+    """Get table statistics."""
+    session_id = params.get("session_id")
+    table = params.get("table")
+    schema = params.get("schema", "public")
+
+    executor = await resolve_executor(context, session_id)
+
+    if not table:
+        raise ValueError("'table' is required for stats action")
+
+    sql = """
+        SELECT
+            n_live_tup,
+            n_dead_tup,
+            last_vacuum,
+            last_autovacuum,
+            last_analyze,
+            last_autoanalyze
+        FROM pg_stat_user_tables
+        WHERE relname = $1 AND schemaname = $2
+    """
+
+    result = await executor.execute(sql, [table, schema])
+    return json.dumps(result.to_dict())
