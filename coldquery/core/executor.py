@@ -10,6 +10,13 @@ class QueryResult:
     row_count: Optional[int]
     fields: Optional[List[Dict[str, Any]]]
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "rows": self.rows,
+            "row_count": self.row_count,
+            "fields": self.fields,
+        }
+
 class QueryExecutor(Protocol):
     async def execute(self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None) -> QueryResult:
         ...
@@ -102,3 +109,21 @@ class AsyncpgPoolExecutor:
 
 # Singleton instance
 db_executor = AsyncpgPoolExecutor()
+
+
+async def resolve_executor(
+    context: "ActionContext", session_id: Optional[str]
+) -> "QueryExecutor":
+    """
+    Resolves the appropriate query executor based on the session ID.
+
+    Args:
+        context: The action context.
+        session_id: The session ID, if any.
+
+    Returns:
+        The query executor to use.
+    """
+    if session_id:
+        return context.session_manager.get_session_executor(session_id)
+    return context.executor
