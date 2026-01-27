@@ -7,11 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### In Progress
-- Phase 4: Integration tests (PR #29) - blocked by async/event loop bugs
+### Added - Phase 4: Integration Tests (FAILING - Known Bugs)
+- **Integration test suite** with REAL PostgreSQL database (13 tests)
+  - Tests transaction workflows (BEGIN/COMMIT/ROLLBACK)
+  - Tests Default-Deny safety policy enforcement
+  - Tests connection pool management
+  - Tests transaction isolation between sessions
+  - Tests concurrent session handling
+- **Test organization**: Separated unit/ and integration/ test directories
+- **KNOWN ISSUES**: Tests currently fail due to:
+  - Event loop management bugs (fixture cleanup in wrong loop)
+  - Connection lifecycle issues (double-close errors)
+  - See TODO.md and docs/OBSERVATIONS.md for details
+- **Rationale**: Committed failing tests to make technical debt visible
+  - Tests document the CORRECT behavior we want
+  - Bugs are in fixtures, not the tools themselves
+  - Can be fixed incrementally without losing test structure
 
-### Planned
-- Phase 5: Docker, CI/CD, and Raspberry Pi deployment
+### In Progress
+- Phase 5: Docker, CI/CD, and Raspberry Pi deployment (Issue #31)
 
 ## [1.0.0] - 2026-01-27
 
