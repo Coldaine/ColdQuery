@@ -14,7 +14,7 @@ async def test_multiple_sessions_can_run_concurrently(real_context: ActionContex
     """Verify that two separate sessions can begin, run, and commit concurrently."""
     # Create a table for this test
     await real_context.executor.execute(
-        "CREATE TABLE concurrency_test (id INT)", autocommit=True
+        "CREATE TABLE concurrency_test (id INT)"
     )
 
     # Begin two sessions
