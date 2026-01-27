@@ -166,6 +166,13 @@ DEBUG=false
 # Run all tests
 pytest tests/
 
+# Run only unit tests
+pytest tests/unit/
+
+# Run only integration tests
+# (requires a running PostgreSQL database)
+pytest -m integration tests/integration/
+
 # Run with coverage
 pytest tests/ --cov=coldquery --cov-report=html
 
