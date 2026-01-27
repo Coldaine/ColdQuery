@@ -53,6 +53,22 @@ pip install -e ".[dev]"
 | `pg_tx` | Transaction control | `begin`, `commit`, `rollback`, `savepoint`, `release`, `list` |
 | `pg_monitor` | Observability | `health`, `activity`, `connections`, `locks`, `size` |
 
+## MCP Resources
+
+| URI | Description |
+|---|---|
+| `postgres://schema/tables` | List all tables in the database. |
+| `postgres://schema/{schema}/{table}` | Get detailed information about a specific table. |
+| `postgres://monitor/health` | Get the health status of the database. |
+| `postgres://monitor/activity` | Get the current database activity. |
+
+## MCP Prompts
+
+| Prompt | Description |
+|---|---|
+| `analyze_query_performance` | Analyze query performance and suggest optimizations. |
+| `debug_lock_contention` | Debug lock contention issues. |
+
 ## Transactional Safety Guide
 
 The **Default-Deny** policy prevents silent failures where an AI agent intends to use a transaction but forgets the `session_id`.
