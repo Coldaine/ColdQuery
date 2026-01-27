@@ -148,36 +148,39 @@ DEBUG=false
 
 | Document | Description |
 |----------|-------------|
+| [CLAUDE.md](CLAUDE.md) | Development guide and AI agent instructions |
+| [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
+| [STATUS.md](STATUS.md) | Current project status and roadmap |
 | [docs/fastmcp-api-patterns.md](docs/fastmcp-api-patterns.md) | FastMCP 3.0 API patterns and dependency injection |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Local setup, testing, debugging |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and design decisions |
 | [docs/MIGRATION.md](docs/MIGRATION.md) | Migration from TypeScript to Python |
-
-### API Reference
-
-| Document | Description |
-|----------|-------------|
-| [docs/TOOL_REFERENCE.md](docs/TOOL_REFERENCE.md) | Complete tool API reference |
-| [docs/SECURITY.md](docs/SECURITY.md) | Security model and threat analysis |
 
 ## Testing
 
 ```bash
 # Run all tests
-pytest tests/
+pytest tests/ -v
+
+# Run only unit tests (fast, no database required)
+pytest tests/unit/ -v
+
+# Run only integration tests (requires PostgreSQL running)
+pytest tests/integration/ -v
 
 # Run with coverage
 pytest tests/ --cov=coldquery --cov-report=html
 
 # Run specific test file
-pytest tests/test_pg_query.py
-
-# Run with verbose output
-pytest tests/ -v
+pytest tests/unit/test_pg_query.py -v
 
 # Run tests matching a pattern
-pytest tests/ -k "test_write"
+pytest tests/ -k "test_write" -v
 ```
+
+**Current Test Status**:
+- Unit tests: 71 passing
+- Integration tests: 13 written (PR #29 - has bugs, not all passing)
+- See [STATUS.md](STATUS.md) for details
 
 ## Running the Server
 
