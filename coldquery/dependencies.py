@@ -4,40 +4,27 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from fastmcp import Context
+from fastmcp.dependencies import CurrentContext, Depends
+
 if TYPE_CHECKING:
     from coldquery.core.context import ActionContext
 
-try:
-    from docket.dependencies import Dependency
-except ImportError:
-    from fastmcp._vendor.docket_di import Dependency
+def get_action_context(ctx: Context = CurrentContext()) -> ActionContext:
+    """Extract ActionContext from the server lifespan context."""
+    if not hasattr(ctx, "lifespan_context") or not ctx.lifespan_context:
+        raise RuntimeError(
+            "ActionContext not available. Server lifespan may not have completed."
+        )
 
+    action_context = ctx.lifespan_context.get("action_context")
+    if action_context is None:
+        raise RuntimeError(
+            "ActionContext not found in server lifespan. "
+            "Ensure the lifespan context manager sets action_context."
+        )
 
-class _CurrentActionContext(Dependency):  # type: ignore[misc]
-    """Async context manager for ActionContext dependency."""
-
-    async def __aenter__(self) -> ActionContext:
-        """Get the ActionContext from server lifespan."""
-        from fastmcp.dependencies import get_server
-
-        server = get_server()
-        # Access lifespan data which contains our ActionContext
-        if not hasattr(server, "_lifespan_result"):
-            raise RuntimeError(
-                "ActionContext not available. Server lifespan may not have completed."
-            )
-
-        action_context = server._lifespan_result.get("action_context")
-        if action_context is None:
-            raise RuntimeError(
-                "ActionContext not found in server lifespan. "
-                "Ensure the lifespan context manager sets action_context."
-            )
-
-        return action_context
-
-    async def __aexit__(self, *args: object) -> None:
-        pass
+    return cast("ActionContext", action_context)
 
 
 def CurrentActionContext() -> ActionContext:
@@ -48,9 +35,6 @@ def CurrentActionContext() -> ActionContext:
 
     Returns:
         A dependency that resolves to the active ActionContext instance
-
-    Raises:
-        RuntimeError: If no active ActionContext found
 
     Example:
         ```python
@@ -66,4 +50,4 @@ def CurrentActionContext() -> ActionContext:
             return json.dumps(result.to_dict())
         ```
     """
-    return cast("ActionContext", _CurrentActionContext())
+    return Depends(get_action_context)
