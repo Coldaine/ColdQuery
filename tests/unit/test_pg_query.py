@@ -2,6 +2,7 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from fastmcp.exceptions import ToolError
 
 from coldquery.actions.query.explain import explain_handler
 from coldquery.actions.query.read import read_handler
@@ -43,7 +44,7 @@ async def test_read_action_returns_rows():
 
 @pytest.mark.asyncio
 async def test_read_action_missing_sql():
-    with pytest.raises(ValueError, match="'sql' parameter is required"):
+    with pytest.raises(ToolError, match="'sql' parameter is required"):
         await read_handler({}, mock_context)
 
 
@@ -80,7 +81,7 @@ async def test_write_action_succeeds_with_session_id():
 
 @pytest.mark.asyncio
 async def test_write_action_missing_sql():
-    with pytest.raises(ValueError, match="'sql' parameter is required"):
+    with pytest.raises(ToolError, match="'sql' parameter is required"):
         await write_handler({"autocommit": True}, mock_context)
 
 
@@ -102,7 +103,7 @@ async def test_explain_builds_correct_sql_without_analyze():
 
 @pytest.mark.asyncio
 async def test_explain_action_missing_sql():
-    with pytest.raises(ValueError, match="'sql' parameter is required"):
+    with pytest.raises(ToolError, match="'sql' parameter is required"):
         await explain_handler({}, mock_context)
 
 
@@ -151,7 +152,7 @@ async def test_transaction_rolls_back_on_failure():
 
 @pytest.mark.asyncio
 async def test_transaction_action_missing_operations():
-    with pytest.raises(ValueError, match="'operations' parameter is required"):
+    with pytest.raises(ToolError, match="'operations' parameter is required"):
         await transaction_handler({}, mock_context)
 
 
@@ -168,7 +169,7 @@ async def test_pg_query_tool_dispatches_to_correct_handler():
 
 @pytest.mark.asyncio
 async def test_pg_query_tool_unknown_action():
-    with pytest.raises(ValueError, match="Unknown action: foo"):
+    with pytest.raises(ToolError, match="Unknown action: foo"):
         await pg_query(action="foo", sql="SELECT 1", context=mock_context)
 
 

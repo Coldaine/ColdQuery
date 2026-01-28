@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
+from fastmcp.exceptions import ToolError
 from coldquery.tools.pg_admin import pg_admin
 from coldquery.core.context import ActionContext
 from coldquery.core.executor import QueryResult
@@ -17,12 +18,12 @@ async def test_vacuum_requires_auth(mock_context):
 
 @pytest.mark.asyncio
 async def test_stats_handler_requires_table(mock_context):
-    with pytest.raises(ValueError, match="'table' is required for stats action"):
+    with pytest.raises(ToolError, match="'table' is required for stats action"):
         await pg_admin(action="stats", context=mock_context)
 
 @pytest.mark.asyncio
 async def test_reindex_requires_table(mock_context):
-    with pytest.raises(ValueError, match="'table' parameter is required for reindex action"):
+    with pytest.raises(ToolError, match="'table' parameter is required for reindex action"):
         await pg_admin(action="reindex", context=mock_context, autocommit=True)
 
 @pytest.mark.asyncio

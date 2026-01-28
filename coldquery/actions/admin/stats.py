@@ -1,5 +1,6 @@
 import json
 from typing import Dict, Any
+from fastmcp.exceptions import ToolError
 from coldquery.core.context import ActionContext, resolve_executor
 
 async def stats_handler(params: Dict[str, Any], context: ActionContext) -> str:
@@ -11,7 +12,7 @@ async def stats_handler(params: Dict[str, Any], context: ActionContext) -> str:
     executor = await resolve_executor(context, session_id)
 
     if not table:
-        raise ValueError("'table' is required for stats action")
+        raise ToolError("'table' is required for stats action")
 
     sql = """
         SELECT

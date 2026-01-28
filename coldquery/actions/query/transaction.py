@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from fastmcp.exceptions import ToolError
 
 from coldquery.core.context import ActionContext
 from coldquery.middleware.session_echo import enrich_response
@@ -9,7 +10,7 @@ async def transaction_handler(params: Dict[str, Any], context: ActionContext) ->
     operations: Optional[List[Dict[str, Any]]] = params.get("operations")
 
     if not operations:
-        raise ValueError(
+        raise ToolError(
             "The 'operations' parameter is required for the 'transaction' action."
         )
 
@@ -25,7 +26,7 @@ async def transaction_handler(params: Dict[str, Any], context: ActionContext) ->
             sql = op.get("sql")
             query_params = op.get("params")
             if not sql:
-                raise ValueError(f"Operation {i} is missing 'sql'.")
+                raise ToolError(f"Operation {i} is missing 'sql'.")
             try:
                 result = await executor.execute(sql, query_params)
                 results.append(result)

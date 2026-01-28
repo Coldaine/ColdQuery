@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from fastmcp.exceptions import ToolError
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.security.access_control import require_write_access
 from coldquery.middleware.session_echo import enrich_response
@@ -10,7 +11,7 @@ async def create_handler(params: Dict[str, Any], context: ActionContext) -> str:
     sql = params.get("sql")
 
     if not sql:
-        raise ValueError("'sql' parameter is required for create action")
+        raise ToolError("'sql' parameter is required for create action")
 
     require_write_access(session_id, autocommit)
 
@@ -26,7 +27,7 @@ async def alter_handler(params: Dict[str, Any], context: ActionContext) -> str:
     sql = params.get("sql")
 
     if not sql:
-        raise ValueError("'sql' parameter is required for alter action")
+        raise ToolError("'sql' parameter is required for alter action")
 
     require_write_access(session_id, autocommit)
 
@@ -42,7 +43,7 @@ async def drop_handler(params: Dict[str, Any], context: ActionContext) -> str:
     sql = params.get("sql")
 
     if not sql:
-        raise ValueError("'sql' parameter is required for drop action")
+        raise ToolError("'sql' parameter is required for drop action")
 
     require_write_access(session_id, autocommit)
 

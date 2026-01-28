@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from fastmcp.exceptions import ToolError
 
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.core.executor import QueryResult
@@ -14,7 +15,7 @@ async def write_handler(params: Dict[str, Any], context: ActionContext) -> str:
     autocommit: Optional[bool] = params.get("autocommit")
 
     if not sql:
-        raise ValueError("The 'sql' parameter is required for the 'write' action.")
+        raise ToolError("The 'sql' parameter is required for the 'write' action.")
 
     require_write_access(session_id, autocommit)
 

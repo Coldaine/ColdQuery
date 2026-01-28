@@ -1,5 +1,6 @@
 import json
 from typing import Dict, Any
+from fastmcp.exceptions import ToolError
 from coldquery.core.context import ActionContext, resolve_executor
 
 async def describe_handler(params: Dict[str, Any], context: ActionContext) -> str:
@@ -9,7 +10,7 @@ async def describe_handler(params: Dict[str, Any], context: ActionContext) -> st
     session_id = params.get("session_id")
 
     if not name:
-        raise ValueError("'name' parameter is required for describe action")
+        raise ToolError("'name' parameter is required for describe action")
 
     executor = await resolve_executor(context, session_id)
 

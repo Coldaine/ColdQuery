@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from fastmcp.exceptions import ToolError
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.security.access_control import require_write_access
 from coldquery.middleware.session_echo import enrich_response
@@ -67,7 +68,7 @@ async def reindex_handler(params: Dict[str, Any], context: ActionContext) -> str
     executor = await resolve_executor(context, session_id)
 
     if not table:
-        raise ValueError("'table' parameter is required for reindex action")
+        raise ToolError("'table' parameter is required for reindex action")
 
     safe_table = sanitize_identifier(table)
     sql = f"REINDEX TABLE {safe_table}"

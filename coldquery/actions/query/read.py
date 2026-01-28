@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from fastmcp.exceptions import ToolError
 
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.core.executor import QueryResult
@@ -12,7 +13,7 @@ async def read_handler(params: Dict[str, Any], context: ActionContext) -> str:
     session_id: Optional[str] = params.get("session_id")
 
     if not sql:
-        raise ValueError("The 'sql' parameter is required for the 'read' action.")
+        raise ToolError("The 'sql' parameter is required for the 'read' action.")
 
     executor = await resolve_executor(context, session_id)
     result: QueryResult = await executor.execute(sql, query_params)

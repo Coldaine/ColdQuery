@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from fastmcp.exceptions import ToolError
 from coldquery.core.executor import QueryExecutor
 from coldquery.core.session import SessionManager
 
@@ -22,6 +23,6 @@ async def resolve_executor(ctx: ActionContext, session_id: Optional[str]) -> Que
 
     session_executor = ctx.session_manager.get_session_executor(session_id)
     if not session_executor:
-        raise ValueError(f"Invalid or expired session: {session_id}")
+        raise ToolError(f"Invalid or expired session: {session_id}")
 
     return session_executor

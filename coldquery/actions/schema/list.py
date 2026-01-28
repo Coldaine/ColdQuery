@@ -1,5 +1,6 @@
 import json
 from typing import Dict, Any
+from fastmcp.exceptions import ToolError
 from coldquery.core.context import ActionContext, resolve_executor
 
 async def list_handler(params: Dict[str, Any], context: ActionContext) -> str:
@@ -52,6 +53,6 @@ async def list_handler(params: Dict[str, Any], context: ActionContext) -> str:
         result = await executor.execute(sql, [limit, offset])
 
     else:
-        raise ValueError(f"Unsupported target type: {target}")
+        raise ToolError(f"Unsupported target type: {target}")
 
     return json.dumps(result.to_dict(), default=str)

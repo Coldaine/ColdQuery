@@ -1,4 +1,5 @@
 from typing import Any, List, Literal, Optional
+from fastmcp.exceptions import ToolError
 
 from coldquery.actions.query.explain import explain_handler
 from coldquery.actions.query.read import read_handler
@@ -8,7 +9,7 @@ from coldquery.core.context import ActionContext
 from coldquery.dependencies import CurrentActionContext
 
 # Import the mcp server instance to register the tool
-from coldquery.server import mcp
+from coldquery.app import mcp
 
 QUERY_ACTIONS = {
     "read": read_handler,
@@ -46,7 +47,7 @@ async def pg_query(
     """
     handler = QUERY_ACTIONS.get(action)
     if not handler:
-        raise ValueError(f"Unknown action: {action}")
+        raise ToolError(f"Unknown action: {action}")
 
     # Prepare params for the handler
     handler_params = {

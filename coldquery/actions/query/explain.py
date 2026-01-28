@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from fastmcp.exceptions import ToolError
 
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.core.executor import QueryResult
@@ -13,7 +14,7 @@ async def explain_handler(params: Dict[str, Any], context: ActionContext) -> str
     analyze: Optional[bool] = params.get("analyze")
 
     if not sql:
-        raise ValueError("The 'sql' parameter is required for the 'explain' action.")
+        raise ToolError("The 'sql' parameter is required for the 'explain' action.")
 
     explain_parts = ["EXPLAIN"]
     if analyze:

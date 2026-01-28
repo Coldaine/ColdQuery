@@ -1,7 +1,8 @@
 from typing import Literal
+from fastmcp.exceptions import ToolError
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
-from coldquery.server import mcp
+from coldquery.app import mcp
 from coldquery.actions.admin.maintenance import vacuum_handler, analyze_handler, reindex_handler
 from coldquery.actions.admin.stats import stats_handler
 from coldquery.actions.admin.settings import settings_handler
@@ -38,7 +39,7 @@ async def pg_admin(
     """
     handler = ADMIN_ACTIONS.get(action)
     if not handler:
-        raise ValueError(f"Unknown action: {action}")
+        raise ToolError(f"Unknown action: {action}")
 
     params = {
         "table": table,

@@ -1,7 +1,8 @@
 from typing import Literal
+from fastmcp.exceptions import ToolError
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
-from coldquery.server import mcp
+from coldquery.app import mcp
 from coldquery.actions.tx.lifecycle import (
     begin_handler,
     commit_handler,
@@ -40,7 +41,7 @@ async def pg_tx(
     """
     handler = TX_ACTIONS.get(action)
     if not handler:
-        raise ValueError(f"Unknown action: {action}")
+        raise ToolError(f"Unknown action: {action}")
 
     params = {
         "session_id": session_id,

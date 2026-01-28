@@ -1,5 +1,6 @@
 import json
 from typing import Dict, Any
+from fastmcp.exceptions import ToolError
 from coldquery.core.context import ActionContext
 from coldquery.middleware.session_echo import enrich_response
 from coldquery.security.identifiers import sanitize_identifier
@@ -21,7 +22,7 @@ async def begin_handler(params: Dict[str, Any], context: ActionContext) -> str:
         if isolation_level:
             valid_levels = ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"]
             if isolation_level.upper() not in valid_levels:
-                raise ValueError(f"Invalid isolation level: {isolation_level}")
+                raise ToolError(f"Invalid isolation level: {isolation_level}")
             await executor.execute(f"BEGIN ISOLATION LEVEL {isolation_level.upper()}")
         else:
             await executor.execute("BEGIN")
@@ -44,11 +45,11 @@ async def commit_handler(params: Dict[str, Any], context: ActionContext) -> str:
     session_id = params.get("session_id")
 
     if not session_id:
-        raise ValueError("session_id is required for commit action")
+        raise ToolError("session_id is required for commit action")
 
     executor = context.session_manager.get_session_executor(session_id)
     if not executor:
-        raise ValueError(f"Invalid or expired session: {session_id}")
+        raise ToolError(f"Invalid or expired session: {session_id}")
 
     try:
         await executor.execute("COMMIT")
@@ -62,11 +63,11 @@ async def rollback_handler(params: Dict[str, Any], context: ActionContext) -> st
     session_id = params.get("session_id")
 
     if not session_id:
-        raise ValueError("session_id is required for rollback action")
+        raise ToolError("session_id is required for rollback action")
 
     executor = context.session_manager.get_session_executor(session_id)
     if not executor:
-        raise ValueError(f"Invalid or expired session: {session_id}")
+        raise ToolError(f"Invalid or expired session: {session_id}")
 
     try:
         await executor.execute("ROLLBACK")
@@ -81,13 +82,13 @@ async def savepoint_handler(params: Dict[str, Any], context: ActionContext) -> s
     savepoint_name = params.get("savepoint_name")
 
     if not session_id:
-        raise ValueError("session_id is required for savepoint action")
+        raise ToolError("session_id is required for savepoint action")
     if not savepoint_name:
-        raise ValueError("savepoint_name is required for savepoint action")
+        raise ToolError("savepoint_name is required for savepoint action")
 
     executor = context.session_manager.get_session_executor(session_id)
     if not executor:
-        raise ValueError(f"Invalid or expired session: {session_id}")
+        raise ToolError(f"Invalid or expired session: {session_id}")
 
     # Sanitize savepoint name
     safe_name = sanitize_identifier(savepoint_name)
@@ -107,13 +108,13 @@ async def release_handler(params: Dict[str, Any], context: ActionContext) -> str
     savepoint_name = params.get("savepoint_name")
 
     if not session_id:
-        raise ValueError("session_id is required for release action")
+        raise ToolError("session_id is required for release action")
     if not savepoint_name:
-        raise ValueError("savepoint_name is required for release action")
+        raise ToolError("savepoint_name is required for release action")
 
     executor = context.session_manager.get_session_executor(session_id)
     if not executor:
-        raise ValueError(f"Invalid or expired session: {session_id}")
+        raise ToolError(f"Invalid or expired session: {session_id}")
 
     # Sanitize savepoint name
     safe_name = sanitize_identifier(savepoint_name)

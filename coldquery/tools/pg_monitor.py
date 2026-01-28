@@ -1,7 +1,8 @@
 from typing import Literal
+from fastmcp.exceptions import ToolError
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
-from coldquery.server import mcp
+from coldquery.app import mcp
 from coldquery.actions.monitor.health import health_handler
 from coldquery.actions.monitor.observability import (
     activity_handler,
@@ -36,7 +37,7 @@ async def pg_monitor(
     """
     handler = MONITOR_ACTIONS.get(action)
     if not handler:
-        raise ValueError(f"Unknown action: {action}")
+        raise ToolError(f"Unknown action: {action}")
 
     params = {
         "include_idle": include_idle,

@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 import pytest
+from fastmcp.exceptions import ToolError
 
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.core.executor import QueryExecutor
@@ -40,7 +41,7 @@ async def test_resolve_executor_with_invalid_session_id(mock_executor, mock_sess
 
     ctx = ActionContext(executor=mock_executor, session_manager=mock_session_manager)
 
-    with pytest.raises(ValueError, match="Invalid or expired session: invalid_session"):
+    with pytest.raises(ToolError, match="Invalid or expired session: invalid_session"):
         await resolve_executor(ctx, "invalid_session")
 
     mock_session_manager.get_session_executor.assert_called_once_with("invalid_session")

@@ -1,7 +1,8 @@
 from typing import Literal
+from fastmcp.exceptions import ToolError
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
-from coldquery.server import mcp
+from coldquery.app import mcp
 from coldquery.actions.schema.list import list_handler
 from coldquery.actions.schema.describe import describe_handler
 from coldquery.actions.schema.ddl import create_handler, alter_handler, drop_handler
@@ -42,7 +43,7 @@ async def pg_schema(
     """
     handler = SCHEMA_ACTIONS.get(action)
     if not handler:
-        raise ValueError(f"Unknown action: {action}")
+        raise ToolError(f"Unknown action: {action}")
 
     params = {
         "target": target,
