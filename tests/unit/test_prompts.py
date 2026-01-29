@@ -10,9 +10,16 @@ async def test_analyze_query_performance_prompt():
     prompt = await analyze_query_performance(sql, ctx)
     assert isinstance(prompt, list)
     assert len(prompt) == 1
-    assert "role" in prompt[0]
-    assert "content" in prompt[0]
-    assert sql in prompt[0]["content"]
+
+    # Message object assertions
+    assert hasattr(prompt[0], "role")
+    assert prompt[0].role == "user"
+
+    assert hasattr(prompt[0], "content")
+    # content might be TextContent object or string depending on normalization,
+    # but based on traceback it is TextContent
+    content_text = prompt[0].content.text if hasattr(prompt[0].content, "text") else prompt[0].content
+    assert sql in content_text
 
 @pytest.mark.asyncio
 async def test_debug_lock_contention_prompt():
@@ -20,6 +27,10 @@ async def test_debug_lock_contention_prompt():
     prompt = await debug_lock_contention(ctx)
     assert isinstance(prompt, list)
     assert len(prompt) == 1
-    assert "role" in prompt[0]
-    assert "content" in prompt[0]
-    assert "lock contention" in prompt[0]["content"]
+
+    assert hasattr(prompt[0], "role")
+    assert prompt[0].role == "user"
+
+    assert hasattr(prompt[0], "content")
+    content_text = prompt[0].content.text if hasattr(prompt[0].content, "text") else prompt[0].content
+    assert "lock contention" in content_text

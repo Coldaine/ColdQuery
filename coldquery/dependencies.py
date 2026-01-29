@@ -4,41 +4,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from fastmcp.dependencies import Depends
+
+from coldquery.core.executor import db_executor
+from coldquery.core.session import session_manager
+from coldquery.core.context import ActionContext
+
 if TYPE_CHECKING:
-    from coldquery.core.context import ActionContext
+    pass
 
-try:
-    from docket.dependencies import Dependency
-except ImportError:
-    from fastmcp._vendor.docket_di import Dependency
-
-
-class _CurrentActionContext(Dependency):  # type: ignore[misc]
-    """Async context manager for ActionContext dependency."""
-
-    async def __aenter__(self) -> ActionContext:
-        """Get the ActionContext from server lifespan."""
-        from fastmcp.dependencies import get_server  # type: ignore[attr-defined]
-
-        server = get_server()
-        # Access lifespan data which contains our ActionContext
-        if not hasattr(server, "_lifespan_result"):
-            raise RuntimeError(
-                "ActionContext not available. Server lifespan may not have completed."
-            )
-
-        action_context = server._lifespan_result.get("action_context")
-        if action_context is None:
-            raise RuntimeError(
-                "ActionContext not found in server lifespan. "
-                "Ensure the lifespan context manager sets action_context."
-            )
-
-        return action_context
-
-    async def __aexit__(self, *args: object) -> None:
-        pass
-
+def get_action_context() -> ActionContext:
+    """Factory for ActionContext dependency."""
+    return ActionContext(executor=db_executor, session_manager=session_manager)
 
 def CurrentActionContext() -> ActionContext:
     """Get the current ActionContext instance.
@@ -48,9 +25,6 @@ def CurrentActionContext() -> ActionContext:
 
     Returns:
         A dependency that resolves to the active ActionContext instance
-
-    Raises:
-        RuntimeError: If no active ActionContext found
 
     Example:
         ```python
@@ -66,4 +40,4 @@ def CurrentActionContext() -> ActionContext:
             return json.dumps(result.to_dict())
         ```
     """
-    return cast("ActionContext", _CurrentActionContext())
+    return cast("ActionContext", Depends(get_action_context))

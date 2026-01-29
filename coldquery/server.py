@@ -4,23 +4,18 @@ from contextlib import asynccontextmanager
 
 from fastmcp import FastMCP
 
-from coldquery.core.context import ActionContext
 from coldquery.core.executor import db_executor
-from coldquery.core.session import session_manager
 
 
 # Lifespan context manager for initialization/cleanup
 @asynccontextmanager
 async def lifespan(server: FastMCP):
-    """Initialize ActionContext and provide it to tools via lifespan."""
-    # Create ActionContext once at startup
-    action_context = ActionContext(executor=db_executor, session_manager=session_manager)
+    """Initialize database connections and perform cleanup."""
+    # Yield to let the server run.
+    yield {}
 
-    # Yield a dict that tools can access via the server's lifespan result
-    yield {"action_context": action_context}
-
-    # Cleanup on shutdown (if needed)
-    # await db_executor.disconnect()
+    # Cleanup on shutdown
+    await db_executor.disconnect()
 
 
 # Create server with lifespan for initialization
