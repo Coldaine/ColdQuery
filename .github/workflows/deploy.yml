@@ -7,48 +7,12 @@ on:
       - 'coldquery/**'
       - 'Dockerfile'
       - 'docker-compose.deploy.yml'
+      - 'pyproject.toml'
   workflow_dispatch:
 
 jobs:
-  build-and-push:
-    name: Build and Push Multi-Arch Image
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/coldaine/coldquery:latest
-            ghcr.io/coldaine/coldquery:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   deploy:
-    name: Deploy to Raspberry Pi
-    needs: build-and-push
+    name: Build and Deploy on Raspberry Pi
     runs-on: ubuntu-latest
 
     steps:
@@ -68,23 +32,23 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.PI_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Copy compose file to Pi
+      - name: Sync code to Pi
         run: |
-          scp -i ~/.ssh/id_ed25519 \
-            docker-compose.deploy.yml \
-            "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/opt/coldquery/docker-compose.deploy.yml"
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude '__pycache__' \
+            --exclude '.pytest_cache' \
+            --exclude 'legacy' \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            ./ "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/opt/coldquery/"
 
-      - name: Deploy on Raspberry Pi
+      - name: Build and Deploy on Raspberry Pi
         run: |
-          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}" bash -s << EOF
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}" bash -s << 'EOF'
             set -e
-
             cd /opt/coldquery
 
-            # Login to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-            # Create .env file with secrets
+            echo "=== Creating .env file ==="
             cat > .env << ENVEOF
           DB_HOST=${{ secrets.DB_HOST }}
           DB_PORT=${{ secrets.DB_PORT }}
@@ -94,21 +58,26 @@ jobs:
           TS_AUTHKEY=${{ secrets.TAILSCALE_AUTH_KEY }}
           ENVEOF
 
-            # Pull new image and restart
-            docker compose -f docker-compose.deploy.yml pull
+            echo "=== Building Docker image locally (native ARM64) ==="
+            docker build -t coldquery:latest .
+
+            echo "=== Stopping old containers ==="
+            docker compose -f docker-compose.deploy.yml down --remove-orphans 2>/dev/null || true
+
+            echo "=== Starting new containers ==="
             docker compose -f docker-compose.deploy.yml up -d
 
-            echo "Waiting for health check..."
-            for i in \$(seq 1 30); do
+            echo "=== Waiting for health check ==="
+            for i in $(seq 1 30); do
               if docker container inspect coldquery-server --format '{{.State.Health.Status}}' 2>/dev/null | grep -q "healthy"; then
                 echo "Deployment successful and container is healthy!"
                 exit 0
               fi
-              echo "Attempt \$i/30: waiting for container to become healthy..."
+              echo "Attempt $i/30: waiting for container to become healthy..."
               sleep 5
             done
 
-            echo "Health check failed after 150 seconds."
-            docker logs coldquery-server
+            echo "=== Health check failed, showing logs ==="
+            docker logs coldquery-server --tail 50
             exit 1
           EOF

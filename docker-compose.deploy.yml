@@ -17,7 +17,7 @@ services:
     network_mode: host
 
   coldquery:
-    image: ghcr.io/coldaine/coldquery:latest
+    image: coldquery:latest
     container_name: coldquery-server
     environment:
       DB_HOST: ${DB_HOST}
