@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from coldquery.core.context import ActionContext
 
+# Import the Dependency base class from fastmcp's vendored docket
 try:
     from docket.dependencies import Dependency
 except ImportError:
@@ -14,26 +15,27 @@ except ImportError:
 
 
 class _CurrentActionContext(Dependency):  # type: ignore[misc]
-    """Async context manager for ActionContext dependency."""
+    """Dependency that resolves to ActionContext from FastMCP lifespan."""
 
     async def __aenter__(self) -> ActionContext:
-        """Get the ActionContext from server lifespan."""
-        from fastmcp.dependencies import get_server  # type: ignore[attr-defined]
+        """Get the ActionContext from the current FastMCP context's lifespan."""
+        from fastmcp.server.dependencies import get_context
 
-        server = get_server()
-        # Access lifespan data which contains our ActionContext
-        if not hasattr(server, "_lifespan_result"):
-            raise RuntimeError("ActionContext not available. Server lifespan may not have completed.")
+        ctx = get_context()
 
-        action_context = server._lifespan_result.get("action_context")
+        if ctx.lifespan_context is None:
+            raise RuntimeError("Lifespan context not available. Server lifespan may not have completed.")
+
+        action_context = ctx.lifespan_context.get("action_context")
         if action_context is None:
             raise RuntimeError(
-                "ActionContext not found in server lifespan. Ensure the lifespan context manager sets action_context."
+                "ActionContext not found in lifespan. Ensure the lifespan context manager sets action_context."
             )
 
         return action_context
 
     async def __aexit__(self, *args: object) -> None:
+        """No cleanup needed."""
         pass
 
 
