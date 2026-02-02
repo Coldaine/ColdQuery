@@ -71,7 +71,7 @@ Pre-commit hooks run ruff and tests automatically. Config in `pyproject.toml` an
 
 ## Deployment
 
-Server runs on Raspberry Pi at `https://coldquery-server.tail4c911d.ts.net/`.
+Server runs on Raspberry Pi at `https://raspberryoracle.tail4c911d.ts.net/`.
 - Port 19002 (internal)
 - Tailscale Serve for HTTPS
 - Docker Compose stack at `/opt/coldquery/`

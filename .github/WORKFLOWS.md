@@ -2,19 +2,61 @@
 
 This document describes the CI/CD pipelines for ColdQuery.
 
+## Overview
+
+ColdQuery uses a two-workflow CI/CD system:
+1. **ci.yml** - Runs tests and linting on PRs and pushes
+2. **deploy.yml** - Deploys code changes to Raspberry Pi
+
+## ci.yml - Continuous Integration
+
+**Location:** `.github/workflows/ci.yml`
+
+### Trigger
+
+- Pull requests to `main` branch
+- Pushes to `main` branch
+
+### Jobs
+
+#### 1. lint (Lint and Type Check)
+- Runs pre-commit hooks (Ruff formatting/linting)
+- Runs mypy type checking
+- Auto-commits formatting fixes on PRs
+
+#### 2. unit-tests
+- Runs unit tests (`tests/unit/`)
+- Generates coverage report
+- Uploads coverage to Codecov
+
+#### 3. integration-tests
+- Runs integration tests (`tests/integration/`)
+- Uses PostgreSQL 16 service container
+- Currently set to `continue-on-error: true` (known test failures)
+
+#### 4. docker-build
+- Tests building both Docker images:
+  - `Dockerfile` - Full image with code baked in
+  - `Dockerfile.deps` - Deps-only image for Pi deployment
+- Uses buildx with layer caching
+
+### Environment
+
+All jobs run on `ubuntu-latest` with Python 3.12.
+
 ## deploy.yml - Automated Deployment
 
 **Location:** `.github/workflows/deploy.yml`
 
 ### Overview
 
-Automated deployment pipeline that builds an ARM64 Docker image and deploys to a Raspberry Pi via Tailscale.
+Deploys code changes to Raspberry Pi using a **deps-image + mounted-code** approach. The deployment does NOT rebuild the Docker image unless dependencies change.
 
 ### Trigger
 
 | Event | Condition |
 |-------|-----------|
-| Push | `main` branch only |
+| Push | `main` branch, when `coldquery/`, `Dockerfile.deps`, `docker-compose.deploy.yml`, or `pyproject.toml` change |
 | Manual | `workflow_dispatch` (Actions tab) |
 
 ### Pipeline Steps
@@ -27,74 +69,101 @@ Automated deployment pipeline that builds an ARM64 Docker image and deploys to a
 │  1. Checkout code                                               │
 │       └── Clone repository                                       │
 │                                                                  │
-│  2. Set up QEMU                                                  │
-│       └── Enable ARM64 emulation for cross-compilation          │
+│  2. Set up Tailscale                                            │
+│       └── OAuth authentication with tag:ci                      │
 │                                                                  │
-│  3. Set up Docker Buildx                                        │
-│       └── Multi-platform build support                          │
+│  3. Set up SSH                                                  │
+│       └── Configure private key for Pi access                   │
 │                                                                  │
-│  4. Build ARM64 image                                           │
-│       └── docker buildx build --platform linux/arm64            │
-│       └── Output: image.tar (gzip compressed)                   │
+│  4. Sync code to Pi                                             │
+│       └── rsync code to /opt/coldquery/ (excludes .git, cache) │
 │                                                                  │
-│  5. Connect to Tailscale                                        │
-│       └── OAuth authentication                                   │
-│       └── Tag: ci                                               │
+│  5. Deploy on Raspberry Pi                                      │
+│       ├── Create .env file with secrets                         │
+│       ├── Check if coldquery-deps:latest image exists          │
+│       ├── Build deps image if missing (first deploy only)       │
+│       └── Restart container (code is mounted, not copied)       │
 │                                                                  │
-│  6. Set up SSH                                                  │
-│       └── Configure private key                                 │
-│       └── Add Pi to known_hosts                                 │
+│  6. Wait for health check                                       │
+│       └── Poll /health endpoint (30 attempts, 5s interval)      │
 │                                                                  │
-│  7. Transfer image to Pi                                        │
-│       └── gzip | ssh | gunzip | docker load                     │
-│                                                                  │
-│  8. Deploy container                                            │
-│       └── Stop existing container                               │
-│       └── Run new container                                     │
-│       └── Wait for health check (30 attempts)                   │
-│                                                                  │
-│  9. Cleanup old images                                          │
-│       └── docker image prune -f                                 │
-│                                                                  │
-│ 10. Cleanup local artifacts                                     │
-│       └── Remove image.tar and SSH key                          │
+│  7. Rebuild deps if pyproject.toml changed                      │
+│       └── docker build -f Dockerfile.deps && restart            │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Environment Variables
+### Deployment Model
 
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `IMAGE_NAME` | `coldquery` | Docker image name |
-| `PI_HOST` | `100.65.198.61` | Raspberry Pi Tailscale IP |
-| `PI_USER` | `coldaine` | SSH user on Pi |
-| `CONTAINER_NAME` | `coldquery` | Docker container name |
-| `CONTAINER_PORT` | `19002` | Host port mapping |
+**Key Innovation**: The production deployment uses a **two-layer approach**:
+
+1. **Deps Image** (`coldquery-deps:latest`):
+   - Built from `Dockerfile.deps`
+   - Contains Python 3.12 and dependencies (fastmcp, asyncpg, pydantic)
+   - Only rebuilt when `pyproject.toml` changes
+   - Stored locally on the Pi (not pushed to registry)
+
+2. **Mounted Code**:
+   - Source code in `/opt/coldquery/coldquery/` is mounted into the container
+   - Code changes require only `git pull && docker restart`
+   - No image rebuild needed for code-only changes
+
+**Benefits**:
+- Fast deployments (2-5 seconds for code changes)
+- No need to push/pull large images
+- No cross-compilation needed
+- Simple rollback (just `git checkout` and restart)
+
+### Container Configuration
+
+```yaml
+services:
+  coldquery:
+    image: coldquery-deps:latest
+    container_name: coldquery-server
+    volumes:
+      - /opt/coldquery/coldquery:/app/coldquery:ro
+    ports:
+      - "19002:19002"
+    environment:
+      DB_HOST: raspberryoracle.tail4c911d.ts.net
+      DB_PORT: 5432
+      DB_USER: llm_archival
+      DB_PASSWORD: <from secrets>
+      DB_DATABASE: llm_archival
+      HOST: 0.0.0.0
+      PORT: 19002
+    restart: unless-stopped
+```
 
 ### Required Secrets
 
-These must be configured in repository settings (Settings → Secrets and variables → Actions):
+Configure in repository settings (Settings → Secrets and variables → Actions):
 
-| Secret | Description | How to Obtain |
-|--------|-------------|---------------|
-| `TS_OAUTH_CLIENT_ID` | Tailscale OAuth client ID | Tailscale Admin Console → Settings → OAuth clients |
-| `TS_OAUTH_SECRET` | Tailscale OAuth client secret | Same as above |
-| `PI_SSH_PRIVATE_KEY` | SSH private key for Pi | `cat ~/.ssh/id_ed25519` (or generate new) |
-| `PI_POSTGRES_PASSWORD` | PostgreSQL password on Pi | Your database password |
+| Secret | Description |
+|--------|-------------|
+| `TS_OAUTH_CLIENT_ID` | Tailscale OAuth client ID |
+| `TS_OAUTH_SECRET` | Tailscale OAuth client secret |
+| `PI_SSH_KEY` | SSH private key for Pi (ed25519) |
+| `PI_HOST` | Pi Tailscale hostname (raspberryoracle.tail4c911d.ts.net) |
+| `PI_USER` | SSH user on Pi (coldaine) |
+| `DB_HOST` | PostgreSQL host |
+| `DB_PORT` | PostgreSQL port (5432) |
+| `DB_USER` | PostgreSQL user |
+| `DB_PASSWORD` | PostgreSQL password |
+| `DB_DATABASE` | PostgreSQL database name |
 
 ### Tailscale OAuth Setup
 
 1. Go to [Tailscale Admin Console](https://login.tailscale.com/admin/settings/oauth)
 2. Create new OAuth client
-3. Grant permissions:
-   - `Devices: write` (to join network)
-   - Tags: `tag:ci`
-4. Copy client ID and secret to GitHub secrets
+3. Grant permissions: `Devices: write`
+4. Add tag: `tag:ci`
+5. Copy client ID and secret to GitHub secrets
 
 ### Tailscale ACL Requirements
 
-Your Tailscale ACL must allow the CI tag to access the server:
+Your Tailscale ACL must allow CI to access the Pi:
 
 ```json
 {
@@ -102,132 +171,86 @@ Your Tailscale ACL must allow the CI tag to access the server:
     {
       "action": "accept",
       "src": ["tag:ci"],
-      "dst": ["tag:server:*"]
+      "dst": ["raspberryoracle:*"]
     }
   ],
   "tagOwners": {
-    "tag:ci": ["autogroup:admin"],
-    "tag:server": ["autogroup:admin"]
+    "tag:ci": ["autogroup:admin"]
   }
 }
 ```
 
-### Container Configuration
-
-The deployed container runs with:
-
-```bash
-docker run -d \
-  --name coldquery \
-  --restart unless-stopped \
-  --network postgres_network \
-  -p 19002:3000 \
-  -e PGHOST=llm_postgres \
-  -e PGPORT=5432 \
-  -e PGUSER=llm_archival \
-  -e PGPASSWORD=<secret> \
-  -e PGDATABASE=llm_archival \
-  coldquery:latest
-```
-
-**Network:** Connects to existing `postgres_network` Docker network
-**Restart Policy:** `unless-stopped` (survives reboots)
-**Port:** `19002` → `3000` (internal)
-
 ### Health Check
 
-The deployment waits up to 60 seconds for the container to become healthy:
+The deployment waits up to 150 seconds (30 attempts × 5s) for the container to become healthy:
 
 ```bash
-for i in {1..30}; do
-  wget --spider http://localhost:3000/health
-  sleep 2
-done
+docker container inspect coldquery-server --format '{{.State.Health.Status}}'
+# Must return: healthy
 ```
 
-The container must respond to `/health` endpoint for successful deployment.
+The container's healthcheck calls `wget --spider http://localhost:19002/health` every 30 seconds.
 
 ### Troubleshooting
 
+#### Deployment Fails with "Health check failed"
+
+**Check container logs:**
+```bash
+ssh raspberrypi "docker logs coldquery-server --tail 50"
+```
+
+**Common causes:**
+- Database connection failed (check .env credentials)
+- Port 19002 already in use
+- Code syntax error (pre-commit hooks should catch this)
+
 #### Tailscale Connection Fails
 
-**Error:**
-```
-Error: Unable to connect to Tailscale
-```
-
 **Solutions:**
-1. Verify OAuth credentials are correct
-2. Check OAuth client has required permissions
-3. Verify ACL allows `tag:ci`
-4. Check Tailscale service is operational
+1. Verify OAuth credentials in GitHub secrets
+2. Check Tailscale ACL allows `tag:ci` → `raspberryoracle`
+3. Verify Pi is online: `tailscale status | grep raspberryoracle`
 
 #### SSH Connection Fails
 
-**Error:**
-```
-ssh: connect to host 100.65.198.61 port 22: Connection timed out
-```
-
 **Solutions:**
-1. Verify Pi is online (`tailscale status`)
-2. Check ACL allows CI → server access
-3. Verify SSH is running on Pi
-4. Check SSH key matches authorized_keys on Pi
+1. Verify `PI_SSH_KEY` matches Pi's `~/.ssh/authorized_keys`
+2. Check Pi is accessible via Tailscale: `ssh raspberrypi`
+3. Verify `PI_HOST` and `PI_USER` secrets are correct
 
-#### Health Check Fails
+#### rsync Fails
 
-**Error:**
-```
-Health check failed
-```
-
-**Solutions:**
-1. Check container logs: `docker logs coldquery`
-2. Verify PostgreSQL is accessible
-3. Check environment variables are correct
-4. Verify `postgres_network` exists
-
-#### Docker Build Fails
-
-**Error:**
-```
-ERROR: failed to solve: ...
-```
-
-**Solutions:**
-1. Check Dockerfile syntax
-2. Verify all files are committed
-3. Check for missing dependencies
-4. Review build logs for specific error
+**Common causes:**
+- `/opt/coldquery/` directory doesn't exist (create with `sudo mkdir -p /opt/coldquery && sudo chown $USER:$USER /opt/coldquery`)
+- Permission denied (check directory ownership)
+- Network timeout (check Tailscale connection)
 
 ### Local Testing
 
-Before pushing, test the build locally:
+Test the deployment process locally:
 
 ```bash
-# Build for ARM64 (requires QEMU on x86)
-docker buildx build --platform linux/arm64 -t coldquery:test .
+# Build deps image
+docker build -f Dockerfile.deps -t coldquery-deps:latest .
 
-# Or build for your platform
-docker build -t coldquery:test .
-
-# Run locally
+# Run with mounted code (like production)
 docker run -d \
   --name coldquery-test \
-  -p 3000:3000 \
-  -e PGHOST=host.docker.internal \
-  -e PGPORT=5432 \
-  -e PGUSER=postgres \
-  -e PGPASSWORD=yourpassword \
-  -e PGDATABASE=postgres \
-  coldquery:test
+  -v $(pwd)/coldquery:/app/coldquery:ro \
+  -p 19002:19002 \
+  -e DB_HOST=raspberryoracle.tail4c911d.ts.net \
+  -e DB_PORT=5432 \
+  -e DB_USER=llm_archival \
+  -e DB_PASSWORD=<password> \
+  -e DB_DATABASE=llm_archival \
+  coldquery-deps:latest
 
 # Check health
-curl http://localhost:3000/health
+curl http://localhost:19002/health
 
 # View logs
-docker logs coldquery-test
+docker logs coldquery-test -f
 
 # Cleanup
 docker stop coldquery-test && docker rm coldquery-test
@@ -235,31 +258,105 @@ docker stop coldquery-test && docker rm coldquery-test
 
 ### Manual Deployment
 
-If you need to deploy manually:
+If automated deployment fails, deploy manually:
 
-1. Build image locally
-2. Transfer to Pi via SSH:
-   ```bash
-   docker save coldquery:latest | gzip | ssh coldaine@raspberryoracle 'gunzip | docker load'
-   ```
-3. SSH to Pi and restart container:
-   ```bash
-   ssh coldaine@raspberryoracle
-   docker stop coldquery && docker rm coldquery
-   docker run -d ... coldquery:latest
-   ```
+```bash
+# On your local machine
+git push origin main
 
-### Security Notes
+# SSH to Pi
+ssh raspberrypi
+
+# Update code
+cd /opt/coldquery
+git pull
+
+# Restart container (fast - just code reload)
+docker restart coldquery-server
+
+# If dependencies changed
+docker build -f Dockerfile.deps -t coldquery-deps:latest .
+docker compose -f docker-compose.deploy.yml up -d --force-recreate
+
+# Verify
+curl http://localhost:19002/health
+docker logs coldquery-server --tail 20
+```
+
+### Update Process
+
+#### Code-Only Changes
+Most common case - no dependency changes:
+```bash
+# Automated via GitHub Actions on push to main
+# Or manually:
+ssh raspberrypi "cd /opt/coldquery && git pull && docker restart coldquery-server"
+```
+
+#### Dependency Changes
+When `pyproject.toml` changes:
+```bash
+# Automated via GitHub Actions (detects pyproject.toml change)
+# Or manually:
+ssh raspberrypi
+cd /opt/coldquery
+git pull
+docker build -f Dockerfile.deps -t coldquery-deps:latest .
+docker compose -f docker-compose.deploy.yml up -d --force-recreate
+```
+
+### Monitoring
+
+After deployment, verify the service is running:
+
+```bash
+# Via Tailscale (public endpoint)
+curl https://raspberryoracle.tail4c911d.ts.net/health
+
+# Via SSH to Pi (internal)
+ssh raspberrypi "curl http://localhost:19002/health"
+
+# Check container status
+ssh raspberrypi "docker ps | grep coldquery"
+
+# View logs
+ssh raspberrypi "docker logs coldquery-server --tail 50 -f"
+```
+
+### Rollback
+
+If a deployment breaks production:
+
+```bash
+ssh raspberrypi
+cd /opt/coldquery
+
+# Find the last working commit
+git log --oneline
+
+# Rollback code
+git checkout <commit-hash>
+
+# Restart container
+docker restart coldquery-server
+
+# Verify
+curl http://localhost:19002/health
+```
+
+## Security Notes
 
 - SSH private key is used only during deployment and cleaned up
-- Tailscale OAuth token has limited scope
-- PostgreSQL password is injected via secret, never in code
-- Container runs in isolated Docker network
+- Tailscale OAuth token has limited scope (`tag:ci` only)
+- Database credentials are injected via secrets, never in code
+- Container runs as non-root user
+- Code is mounted read-only (`:ro` flag)
 
-## Future Workflows
+## Future Improvements
 
-Planned additions:
-
-- **test.yml**: Run tests on pull requests
-- **release.yml**: Create GitHub releases with changelogs
-- **security.yml**: Dependency vulnerability scanning
+Potential workflow enhancements:
+- Blue/green deployment with zero downtime
+- Automated rollback on health check failure
+- Slack/Discord notifications on deployment success/failure
+- Performance regression testing
+- Automated database migrations

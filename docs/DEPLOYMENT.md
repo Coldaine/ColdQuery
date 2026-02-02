@@ -5,6 +5,8 @@
 ColdQuery runs on a Raspberry Pi at `/opt/coldquery/`, exposed via Tailscale at:
 - `https://raspberryoracle.tail4c911d.ts.net/` (proxies to port 19002)
 
+Note: The server hostname is `raspberryoracle`, not `coldquery-server`.
+
 ### Architecture
 
 ```
