@@ -1,16 +1,29 @@
 # ColdQuery Project Status
 
-**Last Updated**: 2026-02-01
+**Last Updated**: 2026-02-02
 **Current Version**: 1.0.0
-**Active Branch**: main (deployed), fix/fastmcp-http-transport-investigation (debugging)
+**Active Branch**: main (deployed)
 
 ---
 
 ## Overview
 
-ColdQuery is a secure, stateful PostgreSQL MCP server built with FastMCP 3.0 (Python). **Phase 5 (Docker, CI/CD, Deployment) is complete** - the server is deployed to Raspberry Pi and accessible via Tailscale. However, a **FastMCP 3.0.0b1 HTTP transport bug** is blocking MCP client integration.
+ColdQuery is a secure, stateful PostgreSQL MCP server built with FastMCP 3.0 (Python). The server is deployed to Raspberry Pi and accessible via Tailscale.
 
-**Current Blocker**: FastMCP's HTTP transport returns an empty tools list (`{"tools":[]}`) despite all 5 tools being correctly registered internally. See `docs/reports/2026-02-01-deployment-investigation.md` for details.
+**Current Blocker**: FastMCP 3.0.0b1 HTTP transport returns 406 Not Acceptable for `/mcp` endpoint. Tools are registered correctly internally but HTTP transport is broken. See `tests/e2e/test_http_transport.py` for bug detection tests.
+
+---
+
+## Test Coverage
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Unit Tests | 77 | ✅ Passing |
+| E2E (MCP Protocol) | 15 | ✅ Passing (with Docker) |
+| E2E (HTTP Bug) | 7 | ✅ 5 pass, 2 xfail (documents bug) |
+| Integration (Legacy) | 13 | ⚠️ Known issues |
+
+**Total**: 112 tests
 
 ---
 
