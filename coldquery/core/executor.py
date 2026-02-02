@@ -2,7 +2,10 @@ from __future__ import annotations
 import asyncpg
 from typing import Any, Protocol, List, Dict, Optional
 from dataclasses import dataclass
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class QueryResult:
@@ -67,8 +70,8 @@ class AsyncpgSessionExecutor:
                 await self._pool.release(self._connection)
             else:
                 await self._connection.close()
-        except Exception:
-            pass  # Connection may already be released or closed
+        except Exception as e:
+            logger.debug(f"Failed to disconnect session: {e}")  # Connection may already be released or closed
 
     async def create_session(self) -> "QueryExecutor":
         return self

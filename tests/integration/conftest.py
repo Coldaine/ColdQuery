@@ -2,12 +2,6 @@
 Integration test fixtures for ColdQuery with REAL PostgreSQL database.
 
 Requires PostgreSQL running on localhost:5433 (docker compose up -d postgres).
-
-KNOWN ISSUES:
-- Event loop management in pytest-asyncio session-scoped fixtures may cause
-  teardown errors. Function-scoped fixtures are preferred.
-- These tests are marked with pytestmark = pytest.mark.integration and
-  continue-on-error in CI until all fixture issues are resolved.
 """
 
 import pytest
@@ -20,9 +14,8 @@ from coldquery.core.executor import AsyncpgPoolExecutor
 from coldquery.core.session import SessionManager
 
 # --- Real Database Fixtures ---
-# NOTE: These fixtures have async lifecycle bugs - see module docstring above
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def real_db_pool() -> AsyncGenerator[asyncpg.Pool, None]:
     """Create and tear down a real asyncpg connection pool."""
     pool = await asyncpg.create_pool(

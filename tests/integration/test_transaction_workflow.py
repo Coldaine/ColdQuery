@@ -81,18 +81,17 @@ async def test_rollback_workflow(real_context: ActionContext):
 @pytest.mark.asyncio
 async def test_transaction_state_is_managed(real_context: ActionContext):
     """Verify session manager tracks and closes sessions correctly."""
-    assert len(real_context.session_manager.get_all_sessions()) == 0
+    assert len(real_context.session_manager.list_sessions()) == 0
 
     # Begin transaction
     begin_result = await pg_tx(action="begin", context=real_context)
     session_id = json.loads(begin_result)["session_id"]
 
-    assert len(real_context.session_manager.get_all_sessions()) == 1
+    assert len(real_context.session_manager.list_sessions()) == 1
     assert real_context.session_manager.get_session(session_id) is not None
 
     # Commit transaction
     await pg_tx(action="commit", session_id=session_id, context=real_context)
 
-    assert len(real_context.session_manager.get_all_sessions()) == 0
-    with pytest.raises(KeyError):
-        real_context.session_manager.get_session(session_id)
+    assert len(real_context.session_manager.list_sessions()) == 0
+    assert real_context.session_manager.get_session(session_id) is None

@@ -18,7 +18,10 @@ class _CurrentActionContext(Dependency):  # type: ignore[misc]
 
     async def __aenter__(self) -> ActionContext:
         """Get the ActionContext from server lifespan."""
-        from fastmcp.dependencies import get_server  # type: ignore[attr-defined]
+        try:
+            from fastmcp.dependencies import get_server  # type: ignore[attr-defined]
+        except ImportError:
+            from fastmcp.server.dependencies import get_server
 
         server = get_server()
         # Access lifespan data which contains our ActionContext

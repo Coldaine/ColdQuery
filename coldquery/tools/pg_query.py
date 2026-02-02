@@ -8,7 +8,7 @@ from coldquery.core.context import ActionContext
 from coldquery.dependencies import CurrentActionContext
 
 # Import the mcp server instance to register the tool
-from coldquery.server import mcp
+from coldquery.app import mcp
 
 QUERY_ACTIONS = {
     "read": read_handler,
