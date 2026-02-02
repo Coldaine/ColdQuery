@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Phase 6: HTTP Transport (PR #33)
+- **Resolved circular import** causing empty tools list via HTTP transport
+  - Root cause: `server.py` and tool modules had circular import creating two FastMCP instances
+  - Tools registered with one instance, HTTP served from another (empty) instance
+- **Refactored module structure**:
+  - Extracted mcp creation to `coldquery/app.py` (single source of truth)
+  - `server.py` now imports mcp from `app.py`
+  - Tools continue importing from `server.py` (re-export pattern)
+- **Fixed Dockerfile**: Removed source copy to runtime stage (prevented import shadowing)
+- **Added debug script**: `scripts/debug_server.py` for future HTTP transport debugging
+
+### Added - Phase 5: Docker, CI/CD, Deployment
+- Multi-stage Dockerfile (Alpine-based, ~160MB image)
+- Docker Compose production stack with Tailscale integration
+- GitHub Actions CI/CD pipeline (test + deploy workflows)
+- Native ARM64 builds on Raspberry Pi
+- Deployment documentation (`docs/DEPLOYMENT.md`)
+
 ### Added - Phase 4: Integration Tests (FAILING - Known Bugs)
 - **Integration test suite** with REAL PostgreSQL database (13 tests)
   - Tests transaction workflows (BEGIN/COMMIT/ROLLBACK)
@@ -23,9 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests document the CORRECT behavior we want
   - Bugs are in fixtures, not the tools themselves
   - Can be fixed incrementally without losing test structure
-
-### In Progress
-- Phase 5: Docker, CI/CD, and Raspberry Pi deployment (Issue #31)
 
 ## [1.0.0] - 2026-01-27
 

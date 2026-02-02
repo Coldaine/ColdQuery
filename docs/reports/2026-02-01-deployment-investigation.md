@@ -261,4 +261,43 @@ Deep dive into how FastMCP 3.0 wires the LocalProvider to the HTTP transport lay
 
 ColdQuery's deployment infrastructure is working correctly. The server starts, health checks pass, and tools are properly registered in FastMCP's internal registry. The failure point is specifically in FastMCP 3.0.0b1's HTTP transport layer, which returns an empty tools list despite the tools being present.
 
-This is likely a beta bug that needs to be reported to the FastMCP maintainers or worked around via an alternative transport mechanism.
+~~This is likely a beta bug that needs to be reported to the FastMCP maintainers or worked around via an alternative transport mechanism.~~
+
+---
+
+## Resolution (2026-02-02)
+
+**Status**: ✅ RESOLVED
+
+### Root Cause
+
+The issue was **NOT** a FastMCP bug. It was a **circular import** in the ColdQuery codebase causing two separate FastMCP instances to be created:
+
+1. `server.py` created its own `mcp = FastMCP(...)` instance
+2. Tool modules (`pg_query.py`, etc.) imported `from coldquery.server import mcp`
+3. During circular import, tools registered with a DIFFERENT mcp instance than the one used for HTTP serving
+4. Result: HTTP served from empty mcp, tools registered in orphaned mcp
+
+### The Fix
+
+1. **Extracted mcp creation** to `coldquery/app.py` (single source of truth)
+2. **Refactored `server.py`** to import mcp from `app.py` instead of creating it
+3. **Fixed Dockerfile** to not copy `coldquery/` source to runtime stage (was causing import shadowing)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `coldquery/app.py` | NEW - Contains mcp creation, lifespan, health endpoint |
+| `coldquery/server.py` | Simplified - imports from app.py, imports tools |
+| `Dockerfile` | Removed `COPY coldquery ./coldquery` from runtime stage |
+| `scripts/debug_server.py` | NEW - Debug script for future HTTP transport issues |
+
+### Verification
+
+```bash
+$ curl -X POST http://localhost:19002/mcp ... -d '{"method":"tools/list"}'
+{"tools":[{"name":"pg_query",...},{"name":"pg_tx",...},{"name":"pg_schema",...},{"name":"pg_admin",...},{"name":"pg_monitor",...}]}
+```
+
+All 5 tools now visible via HTTP transport. Issue resolved.
