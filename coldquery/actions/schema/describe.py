@@ -1,8 +1,10 @@
 import json
-from typing import Dict, Any
+from typing import Any
+
 from coldquery.core.context import ActionContext, resolve_executor
 
-async def describe_handler(params: Dict[str, Any], context: ActionContext) -> str:
+
+async def describe_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Describe table structure."""
     name = params.get("name")
     schema_name = params.get("schema", "public")

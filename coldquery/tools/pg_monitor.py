@@ -1,7 +1,5 @@
 from typing import Literal
-from coldquery.dependencies import CurrentActionContext
-from coldquery.core.context import ActionContext
-from coldquery.server import mcp
+
 from coldquery.actions.monitor.health import health_handler
 from coldquery.actions.monitor.observability import (
     activity_handler,
@@ -10,6 +8,11 @@ from coldquery.actions.monitor.observability import (
     size_handler,
 )
 
+# Import the mcp server instance to register the tool
+from coldquery.app import mcp
+from coldquery.core.context import ActionContext
+from coldquery.dependencies import CurrentActionContext
+
 MONITOR_ACTIONS = {
     "health": health_handler,
     "activity": activity_handler,
@@ -17,6 +20,7 @@ MONITOR_ACTIONS = {
     "locks": locks_handler,
     "size": size_handler,
 }
+
 
 @mcp.tool()
 async def pg_monitor(

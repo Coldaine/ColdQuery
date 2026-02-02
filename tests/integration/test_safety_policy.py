@@ -1,9 +1,10 @@
+import json
 
 import pytest
+
+from coldquery.core.context import ActionContext
 from coldquery.tools.pg_query import pg_query
 from coldquery.tools.pg_tx import pg_tx
-from coldquery.core.context import ActionContext
-import json
 
 pytestmark = pytest.mark.integration
 
@@ -39,9 +40,7 @@ async def test_write_is_allowed_with_autocommit(real_context: ActionContext):
         autocommit=True,
         context=real_context,
     )
-    result = await pg_query(
-        action="read", sql="SELECT COUNT(*) FROM test_safety", context=real_context
-    )
+    result = await pg_query(action="read", sql="SELECT COUNT(*) FROM test_safety", context=real_context)
     data = json.loads(result)
     assert data["rows"][0]["count"] == 1
 
@@ -60,8 +59,6 @@ async def test_write_is_allowed_with_session_id(real_context: ActionContext):
     )
     await pg_tx(action="commit", session_id=session_id, context=real_context)
 
-    result = await pg_query(
-        action="read", sql="SELECT COUNT(*) FROM test_safety", context=real_context
-    )
+    result = await pg_query(action="read", sql="SELECT COUNT(*) FROM test_safety", context=real_context)
     data = json.loads(result)
     assert data["rows"][0]["count"] == 1

@@ -1,5 +1,7 @@
 from fastmcp import Context
-from coldquery.server import mcp
+
+from coldquery.app import mcp
+
 
 @mcp.prompt()
 async def debug_lock_contention(ctx: Context) -> list:
@@ -16,6 +18,6 @@ async def debug_lock_contention(ctx: Context) -> list:
 2. Use `pg_monitor` with `action="activity"` to see blocking queries.
 3. Use `pg_tx` with `action="list"` to see active transactions.
 4. Provide recommendations for resolving contention based on the findings.
-"""
+""",
         }
     ]

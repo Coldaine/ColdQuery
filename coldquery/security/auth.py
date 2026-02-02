@@ -1,19 +1,25 @@
 import os
-from typing import Optional, Any
+from typing import Any
+
 
 class AuthError(Exception):
     """Base class for authentication errors."""
+
     pass
+
 
 class WriteAccessDeniedError(AuthError):
     """Raised when a write operation is attempted without authorization."""
+
     pass
+
 
 def is_auth_enabled() -> bool:
     """Checks if authentication is enabled via environment variable."""
     return os.environ.get("COLDQUERY_AUTH_ENABLED", "false").lower() == "true"
 
-def require_write_access(session_id: Optional[str], autocommit: Optional[bool]) -> None:
+
+def require_write_access(session_id: str | None, autocommit: bool | None) -> None:
     """
     Enforces the Default-Deny policy for write operations.
     A write operation is only allowed if it's within a session or explicitly autocommitted.
@@ -24,7 +30,9 @@ def require_write_access(session_id: Optional[str], autocommit: Optional[bool]) 
             "Use the 'pg_tx' tool to begin a transaction and obtain a session_id."
         )
 
+
 # The functions below are placeholders and will be fully integrated once ActionContext is available.
+
 
 def require_auth(ctx: Any) -> None:
     """
@@ -39,6 +47,7 @@ def require_auth(ctx: Any) -> None:
     #     raise AuthError("Authentication required. Please use the 'auth_unlock' tool.")
     pass
 
+
 async def auth_unlock_logic(token: str, ctx: Any) -> bool:
     """
     Provides the logic for the future 'auth_unlock' tool.
@@ -51,9 +60,9 @@ async def auth_unlock_logic(token: str, ctx: Any) -> bool:
     if not correct_token:
         raise AuthError("Authentication is enabled, but no COLDQUERY_AUTH_TOKEN is set on the server.")
 
-    if token == correct_token:
-        # The full implementation will set a state on the context object, for example:
-        # ctx.set_state("unlocked", True)
+    # NOTE: Keeping explicit if/return structure for future implementation
+    # that will set state on the context object (e.g., ctx.set_state("unlocked", True))
+    if token == correct_token:  # noqa: SIM103
         return True
 
     return False

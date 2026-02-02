@@ -3,6 +3,7 @@ Live test script for ColdQuery MCP tools against real PostgreSQL.
 Run with: python tests/live_test.py
 Requires PostgreSQL running on localhost:5433 (docker compose up -d postgres)
 """
+
 import asyncio
 import json
 import os
@@ -16,22 +17,20 @@ os.environ.setdefault("DB_USER", "mcp")
 os.environ.setdefault("DB_PASSWORD", "mcp")
 os.environ.setdefault("DB_DATABASE", "mcp_test")
 
-from coldquery.core.executor import AsyncpgPoolExecutor
-from coldquery.core.session import SessionManager
-from coldquery.core.context import ActionContext
+from coldquery.actions.admin.stats import stats_handler
 
 # Import handler functions
 from coldquery.actions.monitor.health import health_handler
-from coldquery.actions.monitor.observability import (
-    activity_handler, connections_handler, locks_handler, size_handler
-)
+from coldquery.actions.monitor.observability import activity_handler, connections_handler, locks_handler, size_handler
 from coldquery.actions.query.read import read_handler
 from coldquery.actions.query.write import write_handler
-from coldquery.actions.schema.list import list_handler as schema_list_handler
 from coldquery.actions.schema.describe import describe_handler
-from coldquery.actions.admin.stats import stats_handler
-from coldquery.actions.tx.lifecycle import begin_handler, commit_handler, list_handler as tx_list_handler
-
+from coldquery.actions.schema.list import list_handler as schema_list_handler
+from coldquery.actions.tx.lifecycle import begin_handler, commit_handler
+from coldquery.actions.tx.lifecycle import list_handler as tx_list_handler
+from coldquery.core.context import ActionContext
+from coldquery.core.executor import AsyncpgPoolExecutor
+from coldquery.core.session import SessionManager
 
 PASS = 0
 FAIL = 0
@@ -107,10 +106,13 @@ async def main():
         # --- Test 4: pg_query write (autocommit) - CREATE TABLE ---
         print("\n--- pg_query write (autocommit) ---")
         try:
-            result = await write_handler({
-                "sql": "CREATE TABLE live_test (id INT, name TEXT)",
-                "autocommit": True,
-            }, ctx)
+            result = await write_handler(
+                {
+                    "sql": "CREATE TABLE live_test (id INT, name TEXT)",
+                    "autocommit": True,
+                },
+                ctx,
+            )
             data = json.loads(result)
             report("write CREATE TABLE", True)
         except Exception as e:
@@ -118,10 +120,13 @@ async def main():
 
         # --- Test 5: pg_query write - INSERT ---
         try:
-            result = await write_handler({
-                "sql": "INSERT INTO live_test VALUES (1, 'hello')",
-                "autocommit": True,
-            }, ctx)
+            result = await write_handler(
+                {
+                    "sql": "INSERT INTO live_test VALUES (1, 'hello')",
+                    "autocommit": True,
+                },
+                ctx,
+            )
             data = json.loads(result)
             report("write INSERT", True)
             report("write row_count is 1", data.get("row_count") == 1, f"Got: {data}")
@@ -153,10 +158,13 @@ async def main():
         # --- Test 8: pg_query write with session_id ---
         if session_id:
             try:
-                result = await write_handler({
-                    "sql": "INSERT INTO live_test VALUES (2, 'world')",
-                    "session_id": session_id,
-                }, ctx)
+                result = await write_handler(
+                    {
+                        "sql": "INSERT INTO live_test VALUES (2, 'world')",
+                        "session_id": session_id,
+                    },
+                    ctx,
+                )
                 data = json.loads(result)
                 report("write in session", True)
             except Exception as e:
@@ -218,9 +226,12 @@ async def main():
         # --- Test 15: Default-Deny test ---
         print("\n--- Default-Deny test ---")
         try:
-            await write_handler({
-                "sql": "INSERT INTO live_test VALUES (99, 'should fail')",
-            }, ctx)
+            await write_handler(
+                {
+                    "sql": "INSERT INTO live_test VALUES (99, 'should fail')",
+                },
+                ctx,
+            )
             report("default-deny blocks write", False, "Expected PermissionError but succeeded")
         except PermissionError:
             report("default-deny blocks write", True)
@@ -258,10 +269,13 @@ async def main():
         # --- Cleanup ---
         print("\n--- Cleanup ---")
         try:
-            await write_handler({
-                "sql": "DROP TABLE IF EXISTS live_test",
-                "autocommit": True,
-            }, ctx)
+            await write_handler(
+                {
+                    "sql": "DROP TABLE IF EXISTS live_test",
+                    "autocommit": True,
+                },
+                ctx,
+            )
             report("cleanup DROP TABLE", True)
         except Exception as e:
             report("cleanup", False, f"{type(e).__name__}: {e}")

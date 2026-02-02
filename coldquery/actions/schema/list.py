@@ -1,8 +1,10 @@
 import json
-from typing import Dict, Any
+from typing import Any
+
 from coldquery.core.context import ActionContext, resolve_executor
 
-async def list_handler(params: Dict[str, Any], context: ActionContext) -> str:
+
+async def list_handler(params: dict[str, Any], context: ActionContext) -> str:
     """List database objects."""
     target = params.get("target", "table")
     schema = params.get("schema")  # noqa: F841 - TODO: wire up schema filtering

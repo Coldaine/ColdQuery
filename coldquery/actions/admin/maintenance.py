@@ -1,13 +1,15 @@
-from typing import Dict, Any
+from typing import Any
+
 from coldquery.core.context import ActionContext, resolve_executor
-from coldquery.security.access_control import require_write_access
 from coldquery.middleware.session_echo import enrich_response
+from coldquery.security.access_control import require_write_access
 from coldquery.security.identifiers import sanitize_identifier
 
-async def vacuum_handler(params: Dict[str, Any], context: ActionContext) -> str:
+
+async def vacuum_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Run VACUUM on a table."""
     session_id = params.get("session_id")
-    autocommit = params.get("autocommit", True) # Maintenance commands are often autocommitted
+    autocommit = params.get("autocommit", True)  # Maintenance commands are often autocommitted
     table = params.get("table")
     full = params.get("full", False)
     verbose = params.get("verbose", False)
@@ -32,7 +34,8 @@ async def vacuum_handler(params: Dict[str, Any], context: ActionContext) -> str:
     result = await executor.execute(sql)
     return enrich_response(result.to_dict(), session_id, context.session_manager)
 
-async def analyze_handler(params: Dict[str, Any], context: ActionContext) -> str:
+
+async def analyze_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Run ANALYZE on a table."""
     session_id = params.get("session_id")
     autocommit = params.get("autocommit", True)
@@ -57,7 +60,8 @@ async def analyze_handler(params: Dict[str, Any], context: ActionContext) -> str
     result = await executor.execute(sql)
     return enrich_response(result.to_dict(), session_id, context.session_manager)
 
-async def reindex_handler(params: Dict[str, Any], context: ActionContext) -> str:
+
+async def reindex_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Run REINDEX on a table or database."""
     session_id = params.get("session_id")
     autocommit = params.get("autocommit", True)

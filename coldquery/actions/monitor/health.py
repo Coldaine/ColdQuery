@@ -1,8 +1,10 @@
 import json
-from typing import Dict, Any
+from typing import Any
+
 from coldquery.core.context import ActionContext, resolve_executor
 
-async def health_handler(params: Dict[str, Any], context: ActionContext) -> str:
+
+async def health_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Database health check."""
     executor = await resolve_executor(context, None)
 

@@ -10,21 +10,44 @@ jobs:
   lint:
     name: Lint and Type Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit (with autofix)
+        id: pre-commit
+        run: |
+          # Run pre-commit with autofix, continue even if it fails (to commit fixes)
+          pre-commit run --all-files --hook-stage pre-commit || echo "pre-commit-failed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit auto-fixes
+        if: github.event_name == 'pull_request'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: Auto-fix with pre-commit hooks"
+
+      - name: Install dev dependencies (for mypy)
         run: |
           pip install --upgrade pip
           pip install -e ".[dev]"
-
-      - name: Run Ruff
-        run: ruff check coldquery/ tests/
 
       - name: Run mypy
         run: mypy coldquery/

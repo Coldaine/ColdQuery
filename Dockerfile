@@ -16,9 +16,9 @@ RUN apk add --no-cache \
 COPY pyproject.toml ./
 COPY coldquery ./coldquery
 
-# Install dependencies
+# Install dependencies (NOT editable - editable install breaks multi-stage builds)
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e .
+    pip install --no-cache-dir .
 
 # Stage 2: Runtime
 FROM python:3.12-alpine
@@ -32,13 +32,12 @@ RUN apk add --no-cache \
     && addgroup -g 1000 coldquery \
     && adduser -D -u 1000 -G coldquery coldquery
 
-# Copy installed packages from builder
+# Copy installed packages from builder (includes coldquery)
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
-COPY coldquery ./coldquery
-COPY pyproject.toml ./
+# NOTE: Do NOT copy coldquery here - it's already in site-packages from pip install
+# Having both causes import conflicts where /app/coldquery shadows site-packages
 
 # Switch to non-root user
 USER coldquery
@@ -47,14 +46,14 @@ USER coldquery
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     HOST=0.0.0.0 \
-    PORT=3000
+    PORT=19002
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --spider -q http://localhost:${PORT}/health || exit 1
 
 # Expose port
-EXPOSE 3000
+EXPOSE 19002
 
 # Run server
 CMD ["python", "-m", "coldquery.server", "--transport", "http"]

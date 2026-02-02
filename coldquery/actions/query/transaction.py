@@ -1,17 +1,15 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from coldquery.core.context import ActionContext
 from coldquery.middleware.session_echo import enrich_response
 
 
-async def transaction_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def transaction_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Handles the 'transaction' action to execute a batch of SQL queries atomically."""
-    operations: Optional[List[Dict[str, Any]]] = params.get("operations")
+    operations: list[dict[str, Any]] | None = params.get("operations")
 
     if not operations:
-        raise ValueError(
-            "The 'operations' parameter is required for the 'transaction' action."
-        )
+        raise ValueError("The 'operations' parameter is required for the 'transaction' action.")
 
     session_id = await context.session_manager.create_session()
     executor = context.session_manager.get_session_executor(session_id)
@@ -31,9 +29,7 @@ async def transaction_handler(params: Dict[str, Any], context: ActionContext) ->
                 results.append(result)
             except Exception as e:
                 await executor.execute("ROLLBACK")
-                raise RuntimeError(
-                    f"Transaction failed at operation {i}: {e}"
-                ) from e
+                raise RuntimeError(f"Transaction failed at operation {i}: {e}") from e
         await executor.execute("COMMIT")
         return enrich_response(
             {

@@ -1,10 +1,13 @@
 from typing import Literal
-from coldquery.dependencies import CurrentActionContext
-from coldquery.core.context import ActionContext
-from coldquery.server import mcp
-from coldquery.actions.schema.list import list_handler
+
+from coldquery.actions.schema.ddl import alter_handler, create_handler, drop_handler
 from coldquery.actions.schema.describe import describe_handler
-from coldquery.actions.schema.ddl import create_handler, alter_handler, drop_handler
+from coldquery.actions.schema.list import list_handler
+
+# Import the mcp server instance to register the tool
+from coldquery.app import mcp
+from coldquery.core.context import ActionContext
+from coldquery.dependencies import CurrentActionContext
 
 SCHEMA_ACTIONS = {
     "list": list_handler,
@@ -13,6 +16,7 @@ SCHEMA_ACTIONS = {
     "alter": alter_handler,
     "drop": drop_handler,
 }
+
 
 @mcp.tool()
 async def pg_schema(

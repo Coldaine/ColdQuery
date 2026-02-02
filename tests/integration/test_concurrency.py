@@ -1,9 +1,10 @@
+import json
 
 import pytest
-import json
-from coldquery.tools.pg_tx import pg_tx
+
 from coldquery.core.context import ActionContext
 from coldquery.core.session import MAX_SESSIONS
+from coldquery.tools.pg_tx import pg_tx
 
 pytestmark = pytest.mark.integration
 
@@ -12,9 +13,7 @@ pytestmark = pytest.mark.integration
 async def test_multiple_sessions_can_run_concurrently(real_context: ActionContext):
     """Verify that two separate sessions can begin, run, and commit concurrently."""
     # Create a table for this test
-    await real_context.executor.execute(
-        "CREATE TABLE concurrency_test (id INT)"
-    )
+    await real_context.executor.execute("CREATE TABLE concurrency_test (id INT)")
 
     # Begin two sessions
     session_a_id = json.loads(await pg_tx(action="begin", context=real_context))["session_id"]

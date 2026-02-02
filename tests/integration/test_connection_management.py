@@ -1,10 +1,11 @@
-
-import pytest
 import json
+
+import asyncpg
+import pytest
+
+from coldquery.core.context import ActionContext
 from coldquery.tools.pg_query import pg_query
 from coldquery.tools.pg_tx import pg_tx
-from coldquery.core.context import ActionContext
-import asyncpg
 
 pytestmark = pytest.mark.integration
 
@@ -26,9 +27,7 @@ async def test_autocommit_queries_use_and_release_pool_connections(
 
 
 @pytest.mark.asyncio
-async def test_session_connections_are_separate_from_pool(
-    real_context: ActionContext, real_db_pool: asyncpg.Pool
-):
+async def test_session_connections_are_separate_from_pool(real_context: ActionContext, real_db_pool: asyncpg.Pool):
     """Verify that creating a session acquires a new connection, not from the idle pool."""
     initial_idle_conns = real_db_pool.get_idle_size()  # noqa: F841 - TODO: wire up assertion
 
@@ -51,9 +50,7 @@ async def test_session_connections_are_separate_from_pool(
 
 
 @pytest.mark.asyncio
-async def test_closing_session_releases_connection(
-    real_context: ActionContext, real_db_pool: asyncpg.Pool
-):
+async def test_closing_session_releases_connection(real_context: ActionContext, real_db_pool: asyncpg.Pool):
     """Verify that committing or rolling back a transaction releases the connection."""
     initial_idle_conns = real_db_pool.get_idle_size()
 

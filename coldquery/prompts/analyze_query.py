@@ -1,5 +1,7 @@
 from fastmcp import Context
-from coldquery.server import mcp
+
+from coldquery.app import mcp
+
 
 @mcp.prompt()
 async def analyze_query_performance(sql: str, ctx: Context) -> list:
@@ -26,6 +28,6 @@ Steps:
 2. Use `pg_admin` with `action="stats"` to check table statistics for the tables involved in the query.
 3. Use `pg_schema` with `action="describe"` to review the indexes on the tables.
 4. Provide optimization recommendations based on the information gathered.
-"""
+""",
         }
     ]

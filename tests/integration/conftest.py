@@ -10,10 +10,11 @@ KNOWN ISSUES:
   continue-on-error in CI until all fixture issues are resolved.
 """
 
-import pytest
-import asyncpg
 import os
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
+import asyncpg
+import pytest
 
 from coldquery.core.context import ActionContext
 from coldquery.core.executor import AsyncpgPoolExecutor
@@ -21,6 +22,7 @@ from coldquery.core.session import SessionManager
 
 # --- Real Database Fixtures ---
 # NOTE: These fixtures have async lifecycle bugs - see module docstring above
+
 
 @pytest.fixture(scope="session")
 async def real_db_pool() -> AsyncGenerator[asyncpg.Pool, None]:
@@ -35,6 +37,7 @@ async def real_db_pool() -> AsyncGenerator[asyncpg.Pool, None]:
     yield pool
     await pool.close()
 
+
 @pytest.fixture
 async def real_executor() -> AsyncGenerator[AsyncpgPoolExecutor, None]:
     """Fixture for a real database executor."""
@@ -42,15 +45,18 @@ async def real_executor() -> AsyncGenerator[AsyncpgPoolExecutor, None]:
     yield executor
     await executor.disconnect()
 
+
 @pytest.fixture
 async def real_session_manager(real_executor: AsyncpgPoolExecutor) -> SessionManager:
     """Fixture for a real session manager."""
     return SessionManager(real_executor)
 
+
 @pytest.fixture
 async def real_context(real_executor: AsyncpgPoolExecutor, real_session_manager: SessionManager) -> ActionContext:
     """Fixture for a real ActionContext."""
     return ActionContext(executor=real_executor, session_manager=real_session_manager)
+
 
 @pytest.fixture(autouse=True)
 async def cleanup_db(real_db_pool: asyncpg.Pool):
