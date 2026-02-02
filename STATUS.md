@@ -1,14 +1,16 @@
 # ColdQuery Project Status
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-02-01
 **Current Version**: 1.0.0
-**Active Branch**: pr-29 (integration tests)
+**Active Branch**: main (deployed), fix/fastmcp-http-transport-investigation (debugging)
 
 ---
 
 ## Overview
 
-ColdQuery is a secure, stateful PostgreSQL MCP server built with FastMCP 3.0 (Python). The project is currently in **Phase 4** (integration testing), with Phases 0-3 successfully completed and merged to main.
+ColdQuery is a secure, stateful PostgreSQL MCP server built with FastMCP 3.0 (Python). **Phase 5 (Docker, CI/CD, Deployment) is complete** - the server is deployed to Raspberry Pi and accessible via Tailscale. However, a **FastMCP 3.0.0b1 HTTP transport bug** is blocking MCP client integration.
+
+**Current Blocker**: FastMCP's HTTP transport returns an empty tools list (`{"tools":[]}`) despite all 5 tools being correctly registered internally. See `docs/reports/2026-02-01-deployment-investigation.md` for details.
 
 ---
 
@@ -93,18 +95,39 @@ Key deliverables:
 - Use environment variables directly (no config module)
 - Review FastMCP 3.0 async patterns for test context
 
-### Phase 5: Docker, CI/CD, Deployment (PLANNED)
-**Status**: 📋 Not started
-**Expected Start**: After Phase 4 completion
+### Phase 5: Docker, CI/CD, Deployment (COMPLETED)
+**Status**: ✅ Deployed to Raspberry Pi
+**Completion Date**: 2026-02-01
 
-Planned deliverables:
-- Multi-stage Dockerfile
-- Docker Compose production stack
-- GitHub Actions CI/CD pipeline
-- ARM64 build for Raspberry Pi
-- Tailscale integration
-- Health checks
-- Deployment documentation
+Deliverables:
+- ✅ Multi-stage Dockerfile (Alpine-based, optimized)
+- ✅ Docker Compose production stack (docker-compose.deploy.yml)
+- ✅ GitHub Actions CI/CD pipeline (test + deploy workflows)
+- ✅ Native ARM64 builds on Raspberry Pi (no QEMU emulation)
+- ✅ Tailscale integration (coldquery-server.tail4c911d.ts.net)
+- ✅ Health checks (HTTP /health endpoint)
+- ✅ Deployment documentation (docs/DEPLOYMENT.md)
+
+**Deployment Location**: `/opt/coldquery/` on Raspberry Pi
+**Port**: 19002 (internal), HTTPS via Tailscale Serve
+
+### Phase 6: FastMCP HTTP Transport Fix (BLOCKED)
+**Status**: 🔴 Investigating
+**Branch**: fix/fastmcp-http-transport-investigation
+
+**Problem**: FastMCP 3.0.0b1's HTTP transport returns empty tools list despite tools being registered.
+
+**Evidence**:
+- Health check works: `curl http://localhost:19002/health` → `{"status":"ok"}`
+- MCP initialize works: Returns session ID and server info
+- Direct Python import: All 5 tools visible via `mcp.list_tools()`
+- HTTP tools/list: Returns `{"tools":[]}` ← BUG
+
+**Potential Fixes**:
+1. Debug FastMCP HTTP handler code path
+2. Try SSE transport instead of Streamable HTTP
+3. File bug report with FastMCP maintainers
+4. Wait for FastMCP 3.0 stable release
 
 ---
 
@@ -144,20 +167,18 @@ Breakdown:
 
 ## Known Issues
 
-### Critical (PR #29)
+### Critical
+1. **FastMCP 3.0.0b1 HTTP Transport Bug** - Tools list returns empty via HTTP endpoint despite being registered internally. This blocks all MCP client integration.
+
+### Medium (PR #29 - Integration Tests)
 1. Integration test fixtures fail with event loop errors
 2. Connection pool initialization issues
 3. Async context management bugs
 
-### Medium
+### Low
 1. Missing isolation level tests (READ COMMITTED vs REPEATABLE READ)
 2. No connection leak stress test (100 transactions)
-3. Phase 3 tools not fully integrated in integration tests
-
-### Low
-1. Documentation needs update for integration test setup
-2. Coverage reporting not configured
-3. Type hints incomplete in some modules
+3. Coverage reporting not configured
 
 ---
 
@@ -179,41 +200,36 @@ Breakdown:
 4. Achieved 71 passing unit tests with good coverage
 5. Implemented Default-Deny safety policy
 6. Created comprehensive documentation (CLAUDE.md, CHANGELOG.md, README.md)
+7. **Deployed to Raspberry Pi** with Docker and Tailscale integration
+8. **Native ARM64 builds** (no QEMU emulation needed)
+9. **Cleaned up legacy TypeScript code** - removed 92 files from repository
 
 ---
 
 ## Next Steps
 
-### Immediate (Phase 4 Completion)
-1. Fix PR #29 integration test bugs:
-   - Remove custom event loop fixture
-   - Fix AsyncpgPoolExecutor initialization
-   - Remove config module references
-   - Test fixtures with real database
-2. Get all 13 integration tests passing
-3. Add missing 7 integration tests
-4. Merge PR #29 to main
+### Immediate (Phase 6 - Fix FastMCP Bug)
+1. **Debug FastMCP HTTP transport** - Trace why tools/list returns empty
+2. Try SSE transport as workaround: `mcp.run(transport="sse")`
+3. File bug report with FastMCP maintainers if needed
+4. Verify MCP client integration works after fix
 
-### Short-term (Phase 5)
-1. Create multi-stage Dockerfile
-2. Set up GitHub Actions CI/CD
-3. Configure ARM64 builds for Raspberry Pi
-4. Add Tailscale deployment support
-5. Write deployment documentation
-
-### Medium-term (Post Phase 5)
-1. Add E2E tests with MCP client
+### Short-term (Post-Fix)
+1. Add E2E tests with real MCP client (Claude Code)
 2. Implement connection pool monitoring
-3. Add query performance logging
+3. Fix integration test suite (PR #29 issues)
 4. Create load testing suite
-5. Set up production monitoring
 
-### Long-term
+### Medium-term
 1. Performance optimization
 2. Query result caching
-3. Multi-database support
-4. Advanced security features (row-level security, audit logging)
-5. Web UI for monitoring
+3. Production monitoring and alerting
+4. Query performance logging
+
+### Long-term
+1. Multi-database support
+2. Advanced security features (row-level security, audit logging)
+3. Web UI for monitoring
 
 ---
 
@@ -249,8 +265,9 @@ Breakdown:
 - `CHANGELOG.md` - Version history
 - `CLAUDE.md` - Agent instructions
 - `docs/DEVELOPMENT.md` - Development guide
+- `docs/DEPLOYMENT.md` - Deployment guide
 - `docs/fastmcp-api-patterns.md` - API patterns
-- `docs/PHASE_*.md` - Phase plans
+- `docs/reports/2026-02-01-deployment-investigation.md` - FastMCP bug investigation
 
 ---
 
@@ -278,23 +295,22 @@ Breakdown:
 
 ## Success Criteria
 
-### Phase 4 (Current)
-- [ ] All 13 integration tests passing
-- [ ] 7 additional integration tests added
-- [ ] No event loop errors
-- [ ] Connection cleanup verified
-- [ ] Real transaction isolation tested
-- [ ] CI pipeline green
+### Phase 6 (Current - FastMCP Fix)
+- [ ] Tools visible via HTTP endpoint
+- [ ] MCP client (Claude Code) can list tools
+- [ ] MCP client can invoke tools
+- [ ] End-to-end workflow verified
 
 ### Overall Project
 - [x] All 5 tools implemented
 - [x] Default-Deny policy enforced
 - [x] SQL injection prevention
 - [x] 70+ unit tests passing
+- [x] Docker deployment ready
+- [x] CI/CD pipeline operational
+- [x] Production-ready documentation
 - [ ] 20+ integration tests passing
-- [ ] Docker deployment ready
-- [ ] CI/CD pipeline operational
-- [ ] Production-ready documentation
+- [ ] MCP client integration working (blocked by FastMCP bug)
 
 ---
 

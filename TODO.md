@@ -1,66 +1,50 @@
 # ColdQuery TODO
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-02-01
 
 ---
 
 ## High Priority
 
-### Fix Integration Test Suite (Phase 4) 🔴
+### Fix FastMCP 3.0 HTTP Transport Bug 🔴
 
-**Status**: FAILING (13 tests written, 10 failing, 13 errors)
-**Location**: `tests/integration/`
-**Related**: GitHub Issue #29, docs/OBSERVATIONS.md
+**Status**: BLOCKED - Investigating
+**Branch**: `fix/fastmcp-http-transport-investigation`
+**Report**: `docs/reports/2026-02-01-deployment-investigation.md`
 
-**Problems**:
+**Problem**: FastMCP 3.0.0b1's HTTP transport returns empty tools list (`{"tools":[]}`) despite all 5 tools being correctly registered internally.
 
-1. **Event Loop Management** (CRITICAL)
-   - Error: `RuntimeError: Task got Future attached to a different loop`
-   - Root cause: Fixture cleanup happening in wrong event loop
-   - Affects: ALL 13 tests during teardown
-   - Files: `tests/integration/conftest.py` fixtures
-
-2. **Connection Lifecycle** (CRITICAL)
-   - Error: `InterfaceError: cannot call Connection.close(): connection has been released`
-   - Root cause: Session cleanup trying to close already-released connections
-   - Affects: 9/13 tests
-   - Files: Session executor disconnect logic
-
-3. **API Mismatch** (MEDIUM)
-   - Error: `AttributeError: 'SessionManager' object has no attribute 'get_all_sessions'`
-   - Root cause: Test uses non-existent method
-   - Fix: Use `list_sessions()` instead
-   - Affects: `test_transaction_workflow.py::test_transaction_state_is_managed`
+**Evidence**:
+- Tools ARE registered (verified via `mcp.list_tools()` in container)
+- Health endpoint works (`/health` returns `{"status":"ok"}`)
+- MCP initialize works (returns session ID)
+- BUT: `tools/list` returns empty array via HTTP
 
 **Action Items**:
-- [ ] Research pytest-asyncio fixture lifecycle best practices
-- [ ] Fix event loop scope for session-scoped fixtures
-- [ ] Review asyncpg connection cleanup patterns
-- [ ] Update SessionManager to properly track connection state
-- [ ] Change `get_all_sessions()` to `list_sessions()` in test
-- [ ] Add integration test documentation to DEVELOPMENT.md
-
-**References**:
-- pytest-asyncio docs: https://pytest-asyncio.readthedocs.io/
-- asyncpg pool docs: https://magicstack.github.io/asyncpg/
+- [ ] Debug FastMCP HTTP handler code path
+- [ ] Try SSE transport instead: `mcp.run(transport="sse")`
+- [ ] File bug report with FastMCP maintainers
+- [ ] Monitor FastMCP 3.0 stable release
 
 ---
 
 ## Medium Priority
 
-### Phase 5: Docker & CI/CD 🟡
+### Fix Integration Test Suite (Phase 4) 🟡
 
-**Status**: IN PROGRESS (Jules working on Issue #31)
-**Target**: Production deployment infrastructure
+**Status**: FAILING (13 tests written, 10 failing)
+**Location**: `tests/integration/`
+**Related**: GitHub Issue #29
 
-**Deliverables**:
-- [ ] Multi-stage Dockerfile
-- [ ] docker-compose.yml (development)
-- [ ] docker-compose.deploy.yml (production with Tailscale)
-- [ ] GitHub Actions CI workflow (updated)
-- [ ] GitHub Actions deploy workflow (new)
-- [ ] ARM64 builds for Raspberry Pi
-- [ ] docs/DEPLOYMENT.md
+**Problems**:
+1. Event loop management issues
+2. Connection lifecycle bugs
+3. API mismatch (`get_all_sessions` → `list_sessions`)
+
+**Action Items**:
+- [ ] Fix event loop scope for session-scoped fixtures
+- [ ] Review asyncpg connection cleanup patterns
+- [ ] Change `get_all_sessions()` to `list_sessions()` in test
 
 ---
 
@@ -94,12 +78,14 @@
 - [x] Phase 1: Core infrastructure (30 unit tests)
 - [x] Phase 2: pg_query tool (17 unit tests)
 - [x] Phase 3: Full tool suite - pg_tx, pg_schema, pg_admin, pg_monitor (24 unit tests)
+- [x] Phase 5: Docker, CI/CD, Raspberry Pi deployment
 - [x] FastMCP 3.0 migration
 - [x] Default-Deny write policy
 - [x] SQL injection prevention (identifier sanitization)
 - [x] Session management with TTL
 - [x] Action registry pattern
-- [x] Comprehensive documentation (CHANGELOG, STATUS, CLAUDE.md, Gemini.md)
+- [x] Comprehensive documentation (CHANGELOG, STATUS, CLAUDE.md)
+- [x] Legacy TypeScript code cleanup (92 files removed)
 
 ---
 
@@ -125,7 +111,8 @@
 
 ## Notes
 
-- Integration tests are INTENTIONALLY failing - they document real bugs we need to fix
+- **Primary blocker**: FastMCP 3.0 HTTP transport bug - tools don't appear via HTTP
 - All 71 unit tests pass - core functionality is solid
-- Focus on Phase 5 deployment first, then circle back to fix integration tests
-- Keep TODO.md updated when completing tasks or discovering new issues
+- Server is deployed and running on Raspberry Pi, but MCP clients can't see tools
+- Integration tests are INTENTIONALLY failing - they document real bugs
+- See investigation report: `docs/reports/2026-02-01-deployment-investigation.md`
