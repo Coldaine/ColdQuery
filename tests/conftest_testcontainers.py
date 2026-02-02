@@ -4,17 +4,38 @@ Testcontainers-based fixtures for integration testing.
 This spins up an ephemeral PostgreSQL container automatically.
 No pre-existing database required - just Docker.
 
-Install: pip install testcontainers[postgres]
-Run: pytest tests/integration/ -v
+Requirements:
+- Docker daemon must be running
+- pip install testcontainers[postgres]
+
+Run: pytest tests/conftest_testcontainers.py -v
 """
 import os
 import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
 
+# Check if Docker is available
+DOCKER_AVAILABLE = False
+DOCKER_ERROR = None
+
+try:
+    import docker
+    client = docker.from_env()
+    client.ping()
+    DOCKER_AVAILABLE = True
+except Exception as e:
+    DOCKER_ERROR = str(e)
+
+# Skip all tests in this module if Docker isn't available
+pytestmark = pytest.mark.skipif(
+    not DOCKER_AVAILABLE,
+    reason=f"Docker not available: {DOCKER_ERROR}"
+)
+
 
 # ============================================================================
-# Option 1: Testcontainers - Real ephemeral PostgreSQL
+# Testcontainers Fixtures - Real ephemeral PostgreSQL
 # ============================================================================
 
 @pytest.fixture(scope="session")
@@ -28,6 +49,9 @@ def postgres_container():
     - Cleans up automatically after tests
     - Requires only Docker, no manual setup
     """
+    if not DOCKER_AVAILABLE:
+        pytest.skip(f"Docker not available: {DOCKER_ERROR}")
+
     from testcontainers.postgres import PostgresContainer
 
     with PostgresContainer(
@@ -102,15 +126,18 @@ async def tc_clean_db(tc_executor):
 
 
 # ============================================================================
-# Example tests using Testcontainers
+# Tests using Testcontainers
 # ============================================================================
 
-@pytest.mark.integration
 class TestWithTestcontainers:
     """
     These tests run against a REAL PostgreSQL in Docker.
 
-    Run with: pytest tests/conftest_testcontainers.py -v -k "TestWithTestcontainers"
+    Run with: pytest tests/conftest_testcontainers.py -v
+
+    Requirements:
+    - Docker daemon must be running
+    - pip install testcontainers[postgres]
     """
 
     async def test_health_check(self, tc_context):
@@ -182,13 +209,73 @@ class TestWithTestcontainers:
 
         assert data["rows"][0]["val"] == "in_tx"
 
+    async def test_transaction_rollback(self, tc_context, tc_clean_db):
+        """Test that rollback discards changes."""
+        from coldquery.actions.tx.lifecycle import begin_handler, rollback_handler
+        from coldquery.actions.query.write import write_handler
+        from coldquery.actions.query.read import read_handler
+        import json
+
+        # Create table first
+        await write_handler({
+            "sql": "CREATE TABLE rollback_test (val TEXT)",
+            "autocommit": True,
+        }, tc_context)
+
+        # Begin transaction
+        result = await begin_handler({}, tc_context)
+        session_id = json.loads(result)["session_id"]
+
+        # Insert in transaction
+        await write_handler({
+            "sql": "INSERT INTO rollback_test VALUES ('should_disappear')",
+            "session_id": session_id,
+        }, tc_context)
+
+        # Rollback instead of commit
+        await rollback_handler({"session_id": session_id}, tc_context)
+
+        # Verify data was NOT persisted
+        result = await read_handler({"sql": "SELECT * FROM rollback_test"}, tc_context)
+        data = json.loads(result)
+
+        assert len(data["rows"]) == 0
+
     async def test_default_deny_policy(self, tc_context):
         """Test that writes without auth are blocked."""
         from coldquery.actions.query.write import write_handler
-        import pytest
 
         with pytest.raises(PermissionError):
             await write_handler({
                 "sql": "CREATE TABLE should_fail (id INT)",
                 # No autocommit, no session_id
             }, tc_context)
+
+    async def test_parameterized_query(self, tc_context, tc_clean_db):
+        """Test parameterized queries with $1, $2 placeholders."""
+        from coldquery.actions.query.write import write_handler
+        from coldquery.actions.query.read import read_handler
+        import json
+
+        # Create table
+        await write_handler({
+            "sql": "CREATE TABLE params_test (id INT, name TEXT)",
+            "autocommit": True,
+        }, tc_context)
+
+        # Insert with parameters
+        await write_handler({
+            "sql": "INSERT INTO params_test VALUES ($1, $2)",
+            "params": [42, "parameterized"],
+            "autocommit": True,
+        }, tc_context)
+
+        # Query with parameters
+        result = await read_handler({
+            "sql": "SELECT * FROM params_test WHERE id = $1",
+            "params": [42],
+        }, tc_context)
+        data = json.loads(result)
+
+        assert len(data["rows"]) == 1
+        assert data["rows"][0]["name"] == "parameterized"
