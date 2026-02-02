@@ -31,7 +31,7 @@ jobs:
         run: mypy coldquery/
 
   unit-tests:
-    name: Unit Tests
+    name: Unit Tests (No Database)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,10 +55,10 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  # Testcontainers-based integration tests
-  # Uses ephemeral PostgreSQL container managed by the test itself
-  integration-tests-testcontainers:
-    name: Integration Tests (Testcontainers)
+  # End-to-End MCP Protocol Tests
+  # Verifies the complete flow: MCP client → ColdQuery → PostgreSQL
+  e2e-tests:
+    name: E2E Tests (MCP Protocol + Real Database)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,15 +74,26 @@ jobs:
           pip install -e ".[dev]"
           pip install "testcontainers[postgres]"
 
+      - name: Run E2E MCP protocol tests
+        run: |
+          echo "=== E2E Test: MCP Client → ColdQuery → PostgreSQL ==="
+          echo "These tests verify:"
+          echo "  - Tools are discoverable via MCP protocol"
+          echo "  - Tool calls work end-to-end"
+          echo "  - Transactions COMMIT/ROLLBACK correctly"
+          echo "  - Security policies are enforced"
+          echo ""
+          pytest tests/e2e/ -v -s
+
       - name: Run Testcontainers integration tests
         run: pytest tests/conftest_testcontainers.py -v
 
   # Service container-based integration tests (legacy)
   # Uses GitHub Actions service container for PostgreSQL
-  integration-tests-service:
-    name: Integration Tests (Service Container)
+  integration-tests-legacy:
+    name: Integration Tests (Legacy - Known Issues)
     runs-on: ubuntu-latest
-    continue-on-error: true  # Known issues with these tests
+    continue-on-error: true  # Known async fixture issues
 
     services:
       postgres:
@@ -112,7 +123,7 @@ jobs:
           pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run integration tests (known failures expected)
+      - name: Run legacy integration tests
         env:
           DB_HOST: localhost
           DB_PORT: 5433
