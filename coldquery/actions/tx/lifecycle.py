@@ -1,8 +1,10 @@
 import json
-from typing import Dict, Any
+from typing import Any, Dict
+
 from coldquery.core.context import ActionContext
 from coldquery.middleware.session_echo import enrich_response
 from coldquery.security.identifiers import sanitize_identifier
+
 
 async def begin_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Begin a new transaction."""

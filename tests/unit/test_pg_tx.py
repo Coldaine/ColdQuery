@@ -1,7 +1,10 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from coldquery.tools.pg_tx import pg_tx
+
 from coldquery.core.context import ActionContext
+from coldquery.tools.pg_tx import pg_tx
+
 
 @pytest.fixture
 def mock_context():

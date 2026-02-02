@@ -1,8 +1,9 @@
-from coldquery.dependencies import CurrentActionContext
-from coldquery.core.context import ActionContext
-from coldquery.app import mcp
-from coldquery.actions.schema.list import list_handler
 from coldquery.actions.schema.describe import describe_handler
+from coldquery.actions.schema.list import list_handler
+from coldquery.app import mcp
+from coldquery.core.context import ActionContext
+from coldquery.dependencies import CurrentActionContext
+
 
 @mcp.resource("postgres://schema/tables")
 async def tables_resource(ctx: ActionContext = CurrentActionContext()) -> str:

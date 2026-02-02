@@ -1,11 +1,13 @@
 from typing import Literal
-from coldquery.dependencies import CurrentActionContext
-from coldquery.core.context import ActionContext
+
+from coldquery.actions.admin.maintenance import analyze_handler, reindex_handler, vacuum_handler
+from coldquery.actions.admin.settings import settings_handler
+from coldquery.actions.admin.stats import stats_handler
+
 # Import the mcp server instance to register the tool
 from coldquery.app import mcp
-from coldquery.actions.admin.maintenance import vacuum_handler, analyze_handler, reindex_handler
-from coldquery.actions.admin.stats import stats_handler
-from coldquery.actions.admin.settings import settings_handler
+from coldquery.core.context import ActionContext
+from coldquery.dependencies import CurrentActionContext
 
 ADMIN_ACTIONS = {
     "vacuum": vacuum_handler,

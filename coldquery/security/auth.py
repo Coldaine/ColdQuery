@@ -1,5 +1,6 @@
 import os
-from typing import Optional, Any
+from typing import Any, Optional
+
 
 class AuthError(Exception):
     """Base class for authentication errors."""

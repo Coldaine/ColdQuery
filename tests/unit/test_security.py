@@ -1,12 +1,14 @@
 import pytest
+
 from coldquery.security.identifiers import (
-    validate_identifier,
+    MAX_IDENTIFIER_LENGTH,
+    InvalidIdentifierError,
+    sanitize_column_ref,
     sanitize_identifier,
     sanitize_table_name,
-    sanitize_column_ref,
-    InvalidIdentifierError,
-    MAX_IDENTIFIER_LENGTH,
+    validate_identifier,
 )
+
 
 # Test cases for validate_identifier
 def test_validate_identifier_valid():

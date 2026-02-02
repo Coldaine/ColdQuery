@@ -1,8 +1,9 @@
-import logging
 import json
+import logging
 import os
 import sys
 from datetime import datetime, timezone
+
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:

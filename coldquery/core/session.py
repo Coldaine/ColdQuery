@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
 from coldquery.core.executor import QueryExecutor, db_executor
 from coldquery.core.logger import get_logger

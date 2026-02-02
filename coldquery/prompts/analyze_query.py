@@ -1,5 +1,7 @@
 from fastmcp import Context
+
 from coldquery.app import mcp
+
 
 @mcp.prompt()
 async def analyze_query_performance(sql: str, ctx: Context) -> list:

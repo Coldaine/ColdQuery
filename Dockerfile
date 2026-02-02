@@ -46,14 +46,14 @@ USER coldquery
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     HOST=0.0.0.0 \
-    PORT=3000
+    PORT=19002
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --spider -q http://localhost:${PORT}/health || exit 1
 
 # Expose port
-EXPOSE 3000
+EXPOSE 19002
 
 # Run server
 CMD ["python", "-m", "coldquery.server", "--transport", "http"]

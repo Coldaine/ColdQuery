@@ -4,6 +4,7 @@ from typing import Optional
 from coldquery.core.executor import QueryExecutor
 from coldquery.core.session import SessionManager
 
+
 @dataclass
 class ActionContext:
     """Holds shared application state for tool actions."""

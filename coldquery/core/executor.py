@@ -1,8 +1,11 @@
 from __future__ import annotations
-import asyncpg
-from typing import Any, Protocol, List, Dict, Optional
-from dataclasses import dataclass
+
 import os
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Protocol
+
+import asyncpg
+
 
 @dataclass
 class QueryResult:

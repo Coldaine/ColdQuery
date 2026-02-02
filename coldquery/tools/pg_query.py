@@ -4,11 +4,11 @@ from coldquery.actions.query.explain import explain_handler
 from coldquery.actions.query.read import read_handler
 from coldquery.actions.query.transaction import transaction_handler
 from coldquery.actions.query.write import write_handler
-from coldquery.core.context import ActionContext
-from coldquery.dependencies import CurrentActionContext
 
 # Import the mcp server instance to register the tool
 from coldquery.app import mcp
+from coldquery.core.context import ActionContext
+from coldquery.dependencies import CurrentActionContext
 
 QUERY_ACTIONS = {
     "read": read_handler,

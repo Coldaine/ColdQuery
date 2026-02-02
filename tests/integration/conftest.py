@@ -10,10 +10,11 @@ KNOWN ISSUES:
   continue-on-error in CI until all fixture issues are resolved.
 """
 
-import pytest
-import asyncpg
 import os
 from typing import AsyncGenerator
+
+import asyncpg
+import pytest
 
 from coldquery.core.context import ActionContext
 from coldquery.core.executor import AsyncpgPoolExecutor

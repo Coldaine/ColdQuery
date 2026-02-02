@@ -1,9 +1,11 @@
 from unittest.mock import MagicMock
+
 import pytest
 
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.core.executor import QueryExecutor
 from coldquery.core.session import SessionManager
+
 
 @pytest.fixture
 def mock_executor():

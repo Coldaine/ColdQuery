@@ -1,5 +1,7 @@
 from fastmcp import Context
+
 from coldquery.app import mcp
+
 
 @mcp.prompt()
 async def debug_lock_contention(ctx: Context) -> list:

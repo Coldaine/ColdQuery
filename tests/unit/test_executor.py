@@ -1,7 +1,9 @@
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 from coldquery.core.executor import AsyncpgPoolExecutor, AsyncpgSessionExecutor, QueryResult
+
 
 @pytest.fixture
 def mock_asyncpg_connection():

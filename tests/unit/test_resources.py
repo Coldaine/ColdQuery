@@ -1,9 +1,12 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from coldquery.resources.schema_resources import tables_resource, table_resource
-from coldquery.resources.monitor_resources import health_resource, activity_resource
+
 from coldquery.core.context import ActionContext
 from coldquery.core.executor import QueryResult
+from coldquery.resources.monitor_resources import activity_resource, health_resource
+from coldquery.resources.schema_resources import table_resource, tables_resource
+
 
 @pytest.fixture
 def mock_context():

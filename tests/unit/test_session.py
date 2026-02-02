@@ -1,9 +1,11 @@
 import asyncio
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
-from coldquery.core.session import SessionManager, MAX_SESSIONS
 from coldquery.core.executor import QueryExecutor
+from coldquery.core.session import MAX_SESSIONS, SessionManager
+
 
 @pytest.fixture
 def mock_pool_executor():

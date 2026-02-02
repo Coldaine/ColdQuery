@@ -1,9 +1,11 @@
 import json
-from typing import Dict, Any
+from typing import Any, Dict
+
 from coldquery.core.context import ActionContext, resolve_executor
-from coldquery.security.access_control import require_write_access
 from coldquery.middleware.session_echo import enrich_response
+from coldquery.security.access_control import require_write_access
 from coldquery.security.identifiers import sanitize_identifier
+
 
 async def settings_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Get or set configuration settings."""

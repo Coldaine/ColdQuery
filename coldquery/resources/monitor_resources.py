@@ -1,8 +1,9 @@
-from coldquery.dependencies import CurrentActionContext
-from coldquery.core.context import ActionContext
-from coldquery.app import mcp
 from coldquery.actions.monitor.health import health_handler
 from coldquery.actions.monitor.observability import activity_handler
+from coldquery.app import mcp
+from coldquery.core.context import ActionContext
+from coldquery.dependencies import CurrentActionContext
+
 
 @mcp.resource("postgres://monitor/health")
 async def health_resource(ctx: ActionContext = CurrentActionContext()) -> str:
