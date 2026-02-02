@@ -23,6 +23,7 @@ TX_ACTIONS = {
     "list": list_handler,
 }
 
+
 @mcp.tool()
 async def pg_tx(
     action: Literal["begin", "commit", "rollback", "savepoint", "release", "list"],

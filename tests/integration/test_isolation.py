@@ -1,4 +1,3 @@
-
 import json
 
 import pytest
@@ -107,9 +106,7 @@ async def test_rollback_does_not_affect_other_sessions(real_context: ActionConte
     await pg_tx(action="commit", session_id=session_b_id, context=real_context)
 
     # Verify that only Session B's data and the initial data are present
-    result = await pg_query(
-        action="read", sql="SELECT * FROM test_items ORDER BY id", context=real_context
-    )
+    result = await pg_query(action="read", sql="SELECT * FROM test_items ORDER BY id", context=real_context)
     data = json.loads(result)
     assert len(data["rows"]) == 2
     assert data["rows"][0]["id"] == 2

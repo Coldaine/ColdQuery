@@ -17,6 +17,7 @@ ADMIN_ACTIONS = {
     "settings": settings_handler,
 }
 
+
 @mcp.tool()
 async def pg_admin(
     action: Literal["vacuum", "analyze", "reindex", "stats", "settings"],

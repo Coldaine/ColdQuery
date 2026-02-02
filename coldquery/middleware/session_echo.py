@@ -4,9 +4,7 @@ from typing import Any, Dict, Optional
 from coldquery.core.session import SessionManager
 
 
-def enrich_response(
-    result: Dict[str, Any], session_id: Optional[str], session_manager: SessionManager
-) -> str:
+def enrich_response(result: Dict[str, Any], session_id: Optional[str], session_manager: SessionManager) -> str:
     """
     Enriches the response with session metadata.
 

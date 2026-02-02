@@ -23,15 +23,12 @@ class _CurrentActionContext(Dependency):  # type: ignore[misc]
         server = get_server()
         # Access lifespan data which contains our ActionContext
         if not hasattr(server, "_lifespan_result"):
-            raise RuntimeError(
-                "ActionContext not available. Server lifespan may not have completed."
-            )
+            raise RuntimeError("ActionContext not available. Server lifespan may not have completed.")
 
         action_context = server._lifespan_result.get("action_context")
         if action_context is None:
             raise RuntimeError(
-                "ActionContext not found in server lifespan. "
-                "Ensure the lifespan context manager sets action_context."
+                "ActionContext not found in server lifespan. Ensure the lifespan context manager sets action_context."
             )
 
         return action_context

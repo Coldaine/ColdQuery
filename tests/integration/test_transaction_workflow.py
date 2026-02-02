@@ -1,4 +1,3 @@
-
 import json
 
 import pytest
@@ -38,9 +37,7 @@ async def test_begin_commit_workflow(real_context: ActionContext):
     await pg_tx(action="commit", session_id=session_id, context=real_context)
 
     # Verify data is present after commit
-    read_result = await pg_query(
-        action="read", sql="SELECT * FROM users", context=real_context
-    )
+    read_result = await pg_query(action="read", sql="SELECT * FROM users", context=real_context)
     data = json.loads(read_result)
     assert len(data["rows"]) == 1
     assert data["rows"][0]["name"] == "Alice"
@@ -73,9 +70,7 @@ async def test_rollback_workflow(real_context: ActionContext):
     await pg_tx(action="rollback", session_id=session_id, context=real_context)
 
     # Verify data is NOT present after rollback
-    read_result = await pg_query(
-        action="read", sql="SELECT * FROM products", context=real_context
-    )
+    read_result = await pg_query(action="read", sql="SELECT * FROM products", context=real_context)
     data = json.loads(read_result)
     assert len(data["rows"]) == 0
 

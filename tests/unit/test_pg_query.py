@@ -17,9 +17,7 @@ from coldquery.tools.pg_query import pg_query
 mock_executor = AsyncMock()
 mock_session_manager = MagicMock(spec=SessionManager)
 mock_session_manager.get_session = MagicMock()
-mock_context = ActionContext(
-    executor=mock_executor, session_manager=mock_session_manager
-)
+mock_context = ActionContext(executor=mock_executor, session_manager=mock_session_manager)
 
 
 @pytest.fixture(autouse=True)
@@ -31,9 +29,7 @@ def reset_mocks():
 # Test Cases
 @pytest.mark.asyncio
 async def test_read_action_returns_rows():
-    mock_executor.execute.return_value = QueryResult(
-        rows=[{"id": 1}], row_count=1, fields=[]
-    )
+    mock_executor.execute.return_value = QueryResult(rows=[{"id": 1}], row_count=1, fields=[])
     params = {"sql": "SELECT * FROM users"}
     result = await read_handler(params, mock_context)
     data = json.loads(result)
@@ -55,9 +51,7 @@ async def test_write_action_blocked_without_auth():
 
 @pytest.mark.asyncio
 async def test_write_action_succeeds_with_autocommit():
-    mock_executor.execute.return_value = QueryResult(
-        rows=[], row_count=1, fields=[]
-    )
+    mock_executor.execute.return_value = QueryResult(rows=[], row_count=1, fields=[])
     params = {"sql": "DELETE FROM users", "autocommit": True}
     await write_handler(params, mock_context)
     mock_executor.execute.assert_called_once()
@@ -66,9 +60,7 @@ async def test_write_action_succeeds_with_autocommit():
 @pytest.mark.asyncio
 async def test_write_action_succeeds_with_session_id():
     mock_session_executor = AsyncMock()
-    mock_session_executor.execute.return_value = QueryResult(
-        rows=[], row_count=1, fields=[]
-    )
+    mock_session_executor.execute.return_value = QueryResult(rows=[], row_count=1, fields=[])
     mock_session_manager.get_session_executor.return_value = mock_session_executor
     mock_session = MagicMock()
     mock_session.expires_in = 10
@@ -88,9 +80,7 @@ async def test_write_action_missing_sql():
 async def test_explain_builds_correct_sql_with_analyze():
     params = {"sql": "SELECT 1", "analyze": True}
     await explain_handler(params, mock_context)
-    mock_executor.execute.assert_called_with(
-        "EXPLAIN ANALYZE FORMAT JSON SELECT 1", None
-    )
+    mock_executor.execute.assert_called_with("EXPLAIN ANALYZE FORMAT JSON SELECT 1", None)
 
 
 @pytest.mark.asyncio
@@ -157,9 +147,7 @@ async def test_transaction_action_missing_operations():
 
 @pytest.mark.asyncio
 async def test_pg_query_tool_dispatches_to_correct_handler():
-    mock_executor.execute.return_value = QueryResult(
-        rows=[], row_count=0, fields=[]
-    )
+    mock_executor.execute.return_value = QueryResult(rows=[], row_count=0, fields=[])
     mock_session_manager.get_session_executor.return_value = mock_executor
     mock_executor.execute.side_effect = None
     await pg_query(action="read", sql="SELECT 1", context=mock_context)
@@ -180,12 +168,11 @@ async def test_middleware_enrich_response_near_expiry():
     mock_session_manager.get_session.return_value = mock_session
 
     result = {"rows": []}
-    enriched_result = enrich_response(
-        result, "test_session", mock_session_manager
-    )
+    enriched_result = enrich_response(result, "test_session", mock_session_manager)
     data = json.loads(enriched_result)
     assert "active_session" in data
     assert data["active_session"]["hint"] == "Warning: Session expiring soon. Commit your work shortly."
+
 
 @pytest.mark.asyncio
 async def test_middleware_enrich_response_not_near_expiry():
@@ -195,17 +182,14 @@ async def test_middleware_enrich_response_not_near_expiry():
     mock_session_manager.get_session.return_value = mock_session
 
     result = {"rows": []}
-    enriched_result = enrich_response(
-        result, "test_session", mock_session_manager
-    )
+    enriched_result = enrich_response(result, "test_session", mock_session_manager)
     data = json.loads(enriched_result)
     assert "active_session" not in data
+
 
 @pytest.mark.asyncio
 async def test_middleware_enrich_response_no_session_id():
     result = {"rows": []}
-    enriched_result = enrich_response(
-        result, None, mock_session_manager
-    )
+    enriched_result = enrich_response(result, None, mock_session_manager)
     data = json.loads(enriched_result)
     assert "active_session" not in data

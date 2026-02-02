@@ -41,6 +41,7 @@ async def begin_handler(params: Dict[str, Any], context: ActionContext) -> str:
         await context.session_manager.close_session(session_id)
         raise RuntimeError(f"Failed to begin transaction: {e}")
 
+
 async def commit_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Commit transaction and close session."""
     session_id = params.get("session_id")
@@ -59,6 +60,7 @@ async def commit_handler(params: Dict[str, Any], context: ActionContext) -> str:
     finally:
         await context.session_manager.close_session(session_id)
 
+
 async def rollback_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Rollback transaction and close session."""
     session_id = params.get("session_id")
@@ -76,6 +78,7 @@ async def rollback_handler(params: Dict[str, Any], context: ActionContext) -> st
         return json.dumps(result)
     finally:
         await context.session_manager.close_session(session_id)
+
 
 async def savepoint_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Create a savepoint within a transaction."""
@@ -103,6 +106,7 @@ async def savepoint_handler(params: Dict[str, Any], context: ActionContext) -> s
 
     return enrich_response(result, session_id, context.session_manager)
 
+
 async def release_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Release a savepoint."""
     session_id = params.get("session_id")
@@ -128,6 +132,7 @@ async def release_handler(params: Dict[str, Any], context: ActionContext) -> str
     }
 
     return enrich_response(result, session_id, context.session_manager)
+
 
 async def list_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """List all active sessions."""

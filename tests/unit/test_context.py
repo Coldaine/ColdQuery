@@ -11,9 +11,11 @@ from coldquery.core.session import SessionManager
 def mock_executor():
     return MagicMock(spec=QueryExecutor)
 
+
 @pytest.fixture
 def mock_session_manager():
     return MagicMock(spec=SessionManager)
+
 
 @pytest.mark.asyncio
 async def test_resolve_executor_no_session_id(mock_executor, mock_session_manager):
@@ -23,6 +25,7 @@ async def test_resolve_executor_no_session_id(mock_executor, mock_session_manage
 
     assert resolved_executor is mock_executor
     mock_session_manager.get_session_executor.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_resolve_executor_with_valid_session_id(mock_executor, mock_session_manager):
@@ -35,6 +38,7 @@ async def test_resolve_executor_with_valid_session_id(mock_executor, mock_sessio
 
     assert resolved_executor is mock_session_executor
     mock_session_manager.get_session_executor.assert_called_once_with("valid_session")
+
 
 @pytest.mark.asyncio
 async def test_resolve_executor_with_invalid_session_id(mock_executor, mock_session_manager):

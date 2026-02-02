@@ -13,6 +13,7 @@ def mock_context():
     mock_session_manager = MagicMock()
     return ActionContext(executor=mock_executor, session_manager=mock_session_manager)
 
+
 @pytest.mark.asyncio
 async def test_list_tables(mock_context):
     mock_executor = mock_context.executor
@@ -25,6 +26,7 @@ async def test_list_tables(mock_context):
     result = await pg_schema(action="list", target="table", context=mock_context)
     assert "users" in result
 
+
 @pytest.mark.asyncio
 async def test_describe_table(mock_context):
     mock_executor = mock_context.executor
@@ -35,6 +37,7 @@ async def test_describe_table(mock_context):
 
     result = await pg_schema(action="describe", name="users", context=mock_context)
     assert "columns" in result
+
 
 @pytest.mark.asyncio
 async def test_create_requires_auth(mock_context):

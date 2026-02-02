@@ -21,6 +21,4 @@ async def write_handler(params: Dict[str, Any], context: ActionContext) -> str:
     executor = await resolve_executor(context, session_id)
     result: QueryResult = await executor.execute(sql, query_params)
 
-    return enrich_response(
-        result.to_dict(), session_id, context.session_manager
-    )
+    return enrich_response(result.to_dict(), session_id, context.session_manager)

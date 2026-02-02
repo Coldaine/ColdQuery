@@ -4,15 +4,20 @@ from typing import Any, Optional
 
 class AuthError(Exception):
     """Base class for authentication errors."""
+
     pass
+
 
 class WriteAccessDeniedError(AuthError):
     """Raised when a write operation is attempted without authorization."""
+
     pass
+
 
 def is_auth_enabled() -> bool:
     """Checks if authentication is enabled via environment variable."""
     return os.environ.get("COLDQUERY_AUTH_ENABLED", "false").lower() == "true"
+
 
 def require_write_access(session_id: Optional[str], autocommit: Optional[bool]) -> None:
     """
@@ -25,7 +30,9 @@ def require_write_access(session_id: Optional[str], autocommit: Optional[bool]) 
             "Use the 'pg_tx' tool to begin a transaction and obtain a session_id."
         )
 
+
 # The functions below are placeholders and will be fully integrated once ActionContext is available.
+
 
 def require_auth(ctx: Any) -> None:
     """
@@ -39,6 +46,7 @@ def require_auth(ctx: Any) -> None:
     # if not ctx.get_state("unlocked"):
     #     raise AuthError("Authentication required. Please use the 'auth_unlock' tool.")
     pass
+
 
 async def auth_unlock_logic(token: str, ctx: Any) -> bool:
     """

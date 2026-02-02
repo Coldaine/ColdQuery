@@ -28,6 +28,6 @@ Steps:
 2. Use `pg_admin` with `action="stats"` to check table statistics for the tables involved in the query.
 3. Use `pg_schema` with `action="describe"` to review the indexes on the tables.
 4. Provide optimization recommendations based on the information gathered.
-"""
+""",
         }
     ]

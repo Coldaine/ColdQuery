@@ -2,7 +2,6 @@
 
 import logging
 import os
-import sys
 
 # Enable DEBUG logging for FastMCP
 logging.basicConfig(
@@ -13,14 +12,14 @@ logging.getLogger("fastmcp").setLevel(logging.DEBUG)
 logging.getLogger("mcp").setLevel(logging.DEBUG)
 
 # Import after logging is configured
-from coldquery.server import mcp
+from coldquery.server import mcp  # noqa: E402
 
 print("=" * 60)
 print("DEBUG SERVER STARTUP")
 print("=" * 60)
 
 # Verify tools are registered
-print(f"Tools in _local_provider._components:")
+print("Tools in _local_provider._components:")
 for key in mcp._local_provider._components.keys():
     print(f"  {key}")
 
@@ -59,6 +58,7 @@ async def traced_list_tools(run_middleware=True):
     except Exception as e:
         print(f">>> Original list_tools ERROR: {e}")
         import traceback
+
         traceback.print_exc()
         print("=" * 60 + "\n")
         raise
@@ -71,8 +71,6 @@ mcp.list_tools = traced_list_tools
 
 # Also trace the _list_tools_mcp handler if we can find it
 try:
-    from fastmcp.server.mixins.mcp_operations import MCPOperationsMixin
-
     original_list_tools_mcp = mcp._list_tools_mcp
 
     async def traced_list_tools_mcp():
@@ -95,6 +93,8 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", "19002"))
     print(f"Listening on {host}:{port}")
     print("Test with:")
-    print(f'  curl -X POST http://localhost:{port}/mcp -H "Content-Type: application/json" -d \'{{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"id\":1}}\'')
+    print(
+        f'  curl -X POST http://localhost:{port}/mcp -H "Content-Type: application/json" -d \'{{"jsonrpc":"2.0","method":"tools/list","id":1}}\''
+    )
     print()
     mcp.run(transport="http", host=host, port=port)

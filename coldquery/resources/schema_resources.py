@@ -11,6 +11,7 @@ async def tables_resource(ctx: ActionContext = CurrentActionContext()) -> str:
     params = {"target": "table", "limit": 100, "offset": 0}
     return await list_handler(params, ctx)
 
+
 @mcp.resource("postgres://schema/{schema}/{table}")
 async def table_resource(schema: str, table: str, ctx: ActionContext = CurrentActionContext()) -> str:
     """Get detailed information about a specific table."""

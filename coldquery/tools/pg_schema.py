@@ -17,6 +17,7 @@ SCHEMA_ACTIONS = {
     "drop": drop_handler,
 }
 
+
 @mcp.tool()
 async def pg_schema(
     action: Literal["list", "describe", "create", "alter", "drop"],

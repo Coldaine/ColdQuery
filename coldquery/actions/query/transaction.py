@@ -9,9 +9,7 @@ async def transaction_handler(params: Dict[str, Any], context: ActionContext) ->
     operations: Optional[List[Dict[str, Any]]] = params.get("operations")
 
     if not operations:
-        raise ValueError(
-            "The 'operations' parameter is required for the 'transaction' action."
-        )
+        raise ValueError("The 'operations' parameter is required for the 'transaction' action.")
 
     session_id = await context.session_manager.create_session()
     executor = context.session_manager.get_session_executor(session_id)
@@ -31,9 +29,7 @@ async def transaction_handler(params: Dict[str, Any], context: ActionContext) ->
                 results.append(result)
             except Exception as e:
                 await executor.execute("ROLLBACK")
-                raise RuntimeError(
-                    f"Transaction failed at operation {i}: {e}"
-                ) from e
+                raise RuntimeError(f"Transaction failed at operation {i}: {e}") from e
         await executor.execute("COMMIT")
         return enrich_response(
             {

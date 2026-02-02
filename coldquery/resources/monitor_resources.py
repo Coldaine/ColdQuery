@@ -10,6 +10,7 @@ async def health_resource(ctx: ActionContext = CurrentActionContext()) -> str:
     """Database health status."""
     return await health_handler({}, ctx)
 
+
 @mcp.resource("postgres://monitor/activity")
 async def activity_resource(ctx: ActionContext = CurrentActionContext()) -> str:
     """Current database activity."""

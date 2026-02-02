@@ -21,6 +21,7 @@ async def create_handler(params: Dict[str, Any], context: ActionContext) -> str:
 
     return enrich_response(result.to_dict(), session_id, context.session_manager)
 
+
 async def alter_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Alter database object."""
     session_id = params.get("session_id")
@@ -36,6 +37,7 @@ async def alter_handler(params: Dict[str, Any], context: ActionContext) -> str:
     result = await executor.execute(sql)
 
     return enrich_response(result.to_dict(), session_id, context.session_manager)
+
 
 async def drop_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Drop database object."""

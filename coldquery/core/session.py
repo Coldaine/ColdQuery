@@ -11,6 +11,7 @@ logger = get_logger(__name__)
 SESSION_TTL_MINUTES = 30
 MAX_SESSIONS = 10
 
+
 class SessionData:
     def __init__(self, session_id: str, executor: QueryExecutor):
         self.id = session_id
@@ -25,6 +26,7 @@ class SessionData:
         expiry_time = self.last_accessed + timedelta(minutes=SESSION_TTL_MINUTES)
         remaining = (expiry_time - datetime.now(timezone.utc)).total_seconds() / 60
         return max(0, remaining)
+
 
 class SessionManager:
     def __init__(self, pool_executor: QueryExecutor):
@@ -98,10 +100,13 @@ class SessionManager:
             {
                 "id": session_id,
                 "idle_time_seconds": (now - data.last_accessed).total_seconds(),
-                "expires_in_seconds": (data.last_accessed + timedelta(minutes=SESSION_TTL_MINUTES) - now).total_seconds(),
+                "expires_in_seconds": (
+                    data.last_accessed + timedelta(minutes=SESSION_TTL_MINUTES) - now
+                ).total_seconds(),
             }
             for session_id, data in self._sessions.items()
         ]
+
 
 # Singleton instance
 session_manager = SessionManager(db_executor)

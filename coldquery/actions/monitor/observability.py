@@ -23,6 +23,7 @@ async def activity_handler(params: Dict[str, Any], context: ActionContext) -> st
     result = await executor.execute(sql, [include_idle])
     return json.dumps(result.to_dict(), default=str)
 
+
 async def connections_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Get connection stats."""
     session_id = params.get("session_id")
@@ -31,6 +32,7 @@ async def connections_handler(params: Dict[str, Any], context: ActionContext) ->
     sql = "SELECT datname, numbackends FROM pg_stat_database"
     result = await executor.execute(sql)
     return json.dumps(result.to_dict(), default=str)
+
 
 async def locks_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Get lock information."""
@@ -51,6 +53,7 @@ async def locks_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """
     result = await executor.execute(sql)
     return json.dumps(result.to_dict(), default=str)
+
 
 async def size_handler(params: Dict[str, Any], context: ActionContext) -> str:
     """Get database sizes."""

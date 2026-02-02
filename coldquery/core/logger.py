@@ -29,6 +29,6 @@ def get_logger(name: str) -> logging.Logger:
         formatter = JsonFormatter()
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-        logger.propagate = False # Prevent duplicate logs in parent loggers
+        logger.propagate = False  # Prevent duplicate logs in parent loggers
 
     return logger

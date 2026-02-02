@@ -35,6 +35,7 @@ def mock_asyncpg_connection():
     mock.release = AsyncMock()
     return mock
 
+
 @pytest.mark.asyncio
 async def test_asyncpg_session_executor_execute_select(mock_asyncpg_connection):
     executor = AsyncpgSessionExecutor(mock_asyncpg_connection)
@@ -45,6 +46,7 @@ async def test_asyncpg_session_executor_execute_select(mock_asyncpg_connection):
     assert result.row_count == 1
     assert result.fields == [{"name": "id", "type": "int4"}]
     mock_asyncpg_connection.fetch.assert_awaited_once_with("SELECT 1")
+
 
 @pytest.mark.asyncio
 async def test_asyncpg_session_executor_execute_dml(mock_asyncpg_connection):
@@ -57,11 +59,13 @@ async def test_asyncpg_session_executor_execute_dml(mock_asyncpg_connection):
     assert result.fields == []
     mock_asyncpg_connection.execute.assert_awaited_once_with("INSERT INTO my_table VALUES (1)")
 
+
 @pytest.mark.asyncio
 async def test_asyncpg_session_executor_disconnect(mock_asyncpg_connection):
     executor = AsyncpgSessionExecutor(mock_asyncpg_connection)
     await executor.disconnect()
     mock_asyncpg_connection.close.assert_awaited_once()
+
 
 @pytest.fixture
 def mock_asyncpg_pool(mock_asyncpg_connection):
@@ -79,6 +83,7 @@ def mock_asyncpg_pool(mock_asyncpg_connection):
         def __await__(self):
             async def inner():
                 return self.return_value
+
             return inner().__await__()
 
     acquire_mock = AcquireMock(return_value=mock_asyncpg_connection)
@@ -87,6 +92,7 @@ def mock_asyncpg_pool(mock_asyncpg_connection):
     mock_pool.close = AsyncMock()
     mock_pool.terminate = AsyncMock()
     return mock_pool
+
 
 @pytest.mark.asyncio
 async def test_asyncpg_pool_executor_execute(monkeypatch, mock_asyncpg_pool):
@@ -101,16 +107,18 @@ async def test_asyncpg_pool_executor_execute(monkeypatch, mock_asyncpg_pool):
     mock_create_pool.assert_awaited_once()
     mock_asyncpg_pool.acquire.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_asyncpg_pool_executor_disconnect(monkeypatch, mock_asyncpg_pool):
     mock_create_pool = AsyncMock(return_value=mock_asyncpg_pool)
     monkeypatch.setattr("asyncpg.create_pool", mock_create_pool)
 
     executor = AsyncpgPoolExecutor()
-    await executor._get_pool() # Ensure the pool is created
+    await executor._get_pool()  # Ensure the pool is created
     await executor.disconnect()
 
     mock_asyncpg_pool.close.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_asyncpg_pool_executor_create_session(monkeypatch, mock_asyncpg_pool):

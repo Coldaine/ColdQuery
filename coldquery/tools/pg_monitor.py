@@ -21,6 +21,7 @@ MONITOR_ACTIONS = {
     "size": size_handler,
 }
 
+
 @mcp.tool()
 async def pg_monitor(
     action: Literal["health", "activity", "connections", "locks", "size"],

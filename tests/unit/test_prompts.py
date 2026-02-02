@@ -17,6 +17,7 @@ async def test_analyze_query_performance_prompt():
     assert "content" in prompt[0]
     assert sql in prompt[0]["content"]
 
+
 @pytest.mark.asyncio
 async def test_debug_lock_contention_prompt():
     ctx = MagicMock()

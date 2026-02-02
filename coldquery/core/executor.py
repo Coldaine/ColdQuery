@@ -20,22 +20,25 @@ class QueryResult:
             "fields": self.fields,
         }
 
+
 class QueryExecutor(Protocol):
-    async def execute(self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None) -> QueryResult:
-        ...
+    async def execute(
+        self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None
+    ) -> QueryResult: ...
 
-    async def disconnect(self, destroy: bool = False) -> None:
-        ...
+    async def disconnect(self, destroy: bool = False) -> None: ...
 
-    async def create_session(self) -> "QueryExecutor":
-        ...
+    async def create_session(self) -> "QueryExecutor": ...
+
 
 class AsyncpgSessionExecutor:
     def __init__(self, connection: asyncpg.Connection, pool: Optional[asyncpg.Pool] = None):
         self._connection = connection
         self._pool = pool
 
-    async def execute(self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None) -> QueryResult:
+    async def execute(
+        self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None
+    ) -> QueryResult:
         if timeout_ms:
             await self._connection.execute(f"SET statement_timeout = {int(timeout_ms)}")
 
@@ -44,7 +47,11 @@ class AsyncpgSessionExecutor:
             if sql.strip().upper().startswith("SELECT"):
                 results = await self._connection.fetch(sql, *(params or []))
                 row_count = len(results)
-                fields = [{"name": attr.name, "type": attr.type.__name__} for attr in results.columns] if hasattr(results, 'columns') else []
+                fields = (
+                    [{"name": attr.name, "type": attr.type.__name__} for attr in results.columns]
+                    if hasattr(results, "columns")
+                    else []
+                )
                 return QueryResult(
                     rows=[dict(row) for row in results],
                     row_count=len(results),
@@ -53,7 +60,7 @@ class AsyncpgSessionExecutor:
             else:
                 # For DML statements, use execute
                 status_message = await self._connection.execute(sql, *(params or []))
-                row_count_str = status_message.split()[-1] if status_message else '0'
+                row_count_str = status_message.split()[-1] if status_message else "0"
                 row_count = int(row_count_str) if row_count_str.isdigit() else 0
                 return QueryResult(
                     rows=[],
@@ -76,6 +83,7 @@ class AsyncpgSessionExecutor:
     async def create_session(self) -> "QueryExecutor":
         return self
 
+
 class AsyncpgPoolExecutor:
     _pool: Optional[asyncpg.Pool] = None
 
@@ -90,7 +98,9 @@ class AsyncpgPoolExecutor:
             )
         return self._pool
 
-    async def execute(self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None) -> QueryResult:
+    async def execute(
+        self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None
+    ) -> QueryResult:
         pool = await self._get_pool()
         async with pool.acquire() as connection:
             return await AsyncpgSessionExecutor(connection).execute(sql, params, timeout_ms)
@@ -107,6 +117,7 @@ class AsyncpgPoolExecutor:
         pool = await self._get_pool()
         connection = await pool.acquire()
         return AsyncpgSessionExecutor(connection, pool)
+
 
 # Singleton instance
 db_executor = AsyncpgPoolExecutor()
