@@ -4,34 +4,24 @@ A secure, stateful PostgreSQL Model Context Protocol (MCP) server optimized for 
 
 ## Connect to ColdQuery
 
-### Production Server (Raspberry Pi)
+### Production Server
 
-ColdQuery is deployed at:
+ColdQuery runs on a Raspberry Pi, accessible via Tailscale:
+
 ```
 https://raspberryoracle.tail4c911d.ts.net/mcp
 ```
 
-> **Note:** Requires Tailscale access to the `tail4c911d.ts.net` tailnet.
+**Requirements:**
+- Tailscale access to the `tail4c911d.ts.net` tailnet
+- No additional auth required (server trusts Tailscale network)
 
-### Claude Desktop Configuration
+**Note:** Database credentials are configured server-side. Clients only need network access to the MCP endpoint.
 
-Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
-
-```json
-{
-  "mcpServers": {
-    "coldquery": {
-      "url": "https://raspberryoracle.tail4c911d.ts.net/mcp",
-      "transport": "http"
-    }
-  }
-}
-```
-
-### Claude Code CLI Configuration
+### Claude Code CLI
 
 ```bash
-claude mcp add coldquery --transport http --url https://raspberryoracle.tail4c911d.ts.net/mcp
+claude mcp add-json coldquery '{"type":"http","url":"https://raspberryoracle.tail4c911d.ts.net/mcp"}'
 ```
 
 Or add to `.mcp.json` in your project:
@@ -47,14 +37,17 @@ Or add to `.mcp.json` in your project:
 }
 ```
 
+### Claude Desktop
+
+Claude Desktop requires remote MCP servers to be added via **Settings > Connectors** in the UI, not via `claude_desktop_config.json`. See [Claude's remote MCP documentation](https://support.claude.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers).
+
 ### Verify Connection
 
-Once configured, you can test with:
+Test with Claude Code:
 ```
-Use pg_monitor with action "health" to check database status
+/mcp
 ```
-
-The server provides 5 tools: `pg_query`, `pg_schema`, `pg_admin`, `pg_tx`, `pg_monitor`.
+Should show `coldquery` with 5 tools: `pg_query`, `pg_schema`, `pg_admin`, `pg_tx`, `pg_monitor`.
 
 ---
 
