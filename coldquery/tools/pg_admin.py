@@ -1,7 +1,8 @@
 from typing import Literal
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
-from coldquery.server import mcp
+# Import the mcp server instance to register the tool
+from coldquery.app import mcp
 from coldquery.actions.admin.maintenance import vacuum_handler, analyze_handler, reindex_handler
 from coldquery.actions.admin.stats import stats_handler
 from coldquery.actions.admin.settings import settings_handler

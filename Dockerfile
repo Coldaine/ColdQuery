@@ -32,13 +32,12 @@ RUN apk add --no-cache \
     && addgroup -g 1000 coldquery \
     && adduser -D -u 1000 -G coldquery coldquery
 
-# Copy installed packages from builder
+# Copy installed packages from builder (includes coldquery)
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
-COPY coldquery ./coldquery
-COPY pyproject.toml ./
+# NOTE: Do NOT copy coldquery here - it's already in site-packages from pip install
+# Having both causes import conflicts where /app/coldquery shadows site-packages
 
 # Switch to non-root user
 USER coldquery

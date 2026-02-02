@@ -1,6 +1,6 @@
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
-from coldquery.server import mcp
+from coldquery.app import mcp
 from coldquery.actions.monitor.health import health_handler
 from coldquery.actions.monitor.observability import activity_handler
 
