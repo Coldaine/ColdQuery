@@ -1,24 +1,15 @@
-services:
-  tailscale:
-    image: tailscale/tailscale:latest
-    container_name: coldquery-tailscale
-    hostname: coldquery-server
-    environment:
-      - TS_AUTHKEY=${TS_AUTHKEY}
-      - TS_STATE_DIR=/var/lib/tailscale
-      - TS_EXTRA_ARGS=--advertise-tags=tag:server
-    volumes:
-      - tailscale_data:/var/lib/tailscale
-      - /dev/net/tun:/dev/net/tun
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    restart: unless-stopped
-    network_mode: host
+# ColdQuery deployment - mounts code, deps baked into image
+# Update code: git pull && docker restart coldquery-server
+# Update deps: docker build -f Dockerfile.deps -t coldquery-deps:latest . && docker compose -f docker-compose.deploy.yml up -d
 
+services:
   coldquery:
-    image: coldquery:latest
+    image: coldquery-deps:latest
     container_name: coldquery-server
+    volumes:
+      - /opt/coldquery/coldquery:/app/coldquery:ro
+    ports:
+      - "19002:19002"
     environment:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
@@ -27,15 +18,9 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       HOST: 0.0.0.0
       PORT: 19002
-    network_mode: service:tailscale
-    depends_on:
-      - tailscale
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:19002/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-
-volumes:
-  tailscale_data:

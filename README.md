@@ -136,7 +136,7 @@ DB_DATABASE=mcp_test
 
 # Server Settings
 HOST=0.0.0.0
-PORT=3000
+PORT=3000  # Use 19002 for production, 3000 for local dev
 
 # Debug Mode
 DEBUG=false
@@ -153,7 +153,7 @@ DEBUG=false
 | [STATUS.md](STATUS.md) | Current project status and roadmap |
 | [docs/fastmcp-api-patterns.md](docs/fastmcp-api-patterns.md) | FastMCP 3.0 API patterns and dependency injection |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Local setup, testing, debugging |
-| [docs/MIGRATION.md](docs/MIGRATION.md) | Migration from TypeScript to Python |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production deployment guide |
 
 ## Testing
 
@@ -196,7 +196,7 @@ python -m coldquery.server
 python -m coldquery.server --transport http
 ```
 
-The server will start on `http://0.0.0.0:3000` by default.
+The server will start on `http://0.0.0.0:19002` by default (configured via PORT environment variable).
 
 ### Custom Configuration
 
@@ -315,7 +315,11 @@ MIT
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please:
+1. Open an issue to discuss major changes
+2. Follow the existing code style (Ruff formatting)
+3. Add tests for new features
+4. Update documentation as needed
 
 ## Support
 

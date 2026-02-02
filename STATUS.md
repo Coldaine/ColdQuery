@@ -10,7 +10,7 @@
 
 ColdQuery is a secure, stateful PostgreSQL MCP server built with FastMCP 3.0 (Python). **Phase 6 (HTTP Transport Fix) is complete** - the server is fully deployed to Raspberry Pi and accessible via Tailscale with all 5 MCP tools working correctly.
 
-**Status**: ✅ Fully operational at `https://coldquery-server.tail4c911d.ts.net/`
+**Status**: ✅ Fully operational at `https://raspberryoracle.tail4c911d.ts.net/`
 
 ---
 

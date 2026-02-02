@@ -1,0 +1,24 @@
+# Base image with dependencies only - rebuild when pyproject.toml changes
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    wget \
+    && pip install --no-cache-dir fastmcp asyncpg pydantic \
+    && apt-get remove -y gcc \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    HOST=0.0.0.0 \
+    PORT=19002
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --spider -q http://localhost:${PORT}/health || exit 1
+
+EXPOSE 19002
+
+CMD ["python", "-m", "coldquery.server", "--transport", "http"]

@@ -5,14 +5,14 @@ on:
     branches: [main]
     paths:
       - 'coldquery/**'
-      - 'Dockerfile'
+      - 'Dockerfile.deps'
       - 'docker-compose.deploy.yml'
       - 'pyproject.toml'
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Build and Deploy on Raspberry Pi
+    name: Deploy to Raspberry Pi
     runs-on: ubuntu-latest
 
     steps:
@@ -38,11 +38,11 @@ jobs:
             --exclude '.git' \
             --exclude '__pycache__' \
             --exclude '.pytest_cache' \
-            --exclude 'legacy' \
+            --exclude '.venv' \
             -e "ssh -i ~/.ssh/id_ed25519" \
             ./ "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/opt/coldquery/"
 
-      - name: Build and Deploy on Raspberry Pi
+      - name: Deploy on Raspberry Pi
         run: |
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}" bash -s << 'EOF'
             set -e
@@ -55,22 +55,21 @@ jobs:
           DB_USER=${{ secrets.DB_USER }}
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           DB_DATABASE=${{ secrets.DB_DATABASE }}
-          TS_AUTHKEY=${{ secrets.TAILSCALE_AUTH_KEY }}
           ENVEOF
 
-            echo "=== Building Docker image locally (native ARM64) ==="
-            docker build -t coldquery:latest .
+            echo "=== Checking if deps image needs rebuild ==="
+            if ! docker image inspect coldquery-deps:latest >/dev/null 2>&1; then
+              echo "Building deps image (first time)..."
+              docker build -f Dockerfile.deps -t coldquery-deps:latest .
+            fi
 
-            echo "=== Stopping old containers ==="
-            docker compose -f docker-compose.deploy.yml down --remove-orphans 2>/dev/null || true
-
-            echo "=== Starting new containers ==="
-            docker compose -f docker-compose.deploy.yml up -d
+            echo "=== Restarting container (code is mounted) ==="
+            docker compose -f docker-compose.deploy.yml up -d --force-recreate
 
             echo "=== Waiting for health check ==="
             for i in $(seq 1 30); do
               if docker container inspect coldquery-server --format '{{.State.Health.Status}}' 2>/dev/null | grep -q "healthy"; then
-                echo "Deployment successful and container is healthy!"
+                echo "Deployment successful!"
                 exit 0
               fi
               echo "Attempt $i/30: waiting for container to become healthy..."
@@ -81,3 +80,16 @@ jobs:
             docker logs coldquery-server --tail 50
             exit 1
           EOF
+
+      - name: Rebuild deps if pyproject.toml changed
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -q "pyproject.toml"; then
+            echo "pyproject.toml changed, rebuilding deps image..."
+            ssh -i ~/.ssh/id_ed25519 "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}" bash -s << 'EOF'
+              cd /opt/coldquery
+              docker build -f Dockerfile.deps -t coldquery-deps:latest .
+              docker compose -f docker-compose.deploy.yml up -d --force-recreate
+          EOF
+          else
+            echo "No dependency changes, skipping deps rebuild"
+          fi
