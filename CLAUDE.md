@@ -60,9 +60,15 @@ docker-compose down
 
 ### 1. FastMCP 3.0 Patterns
 
+**App vs Server Split (Critical)**:
+- `coldquery/app.py`: Defines the `mcp = FastMCP(...)` instance. **Single Source of Truth.**
+- `coldquery/server.py`: Entry point. Imports `mcp` from `app.py` and registers tools.
+- **Why?** Prevents "module shadowing" where running `python -m coldquery.server` creates two divergent `mcp` instances if tools import back from `server.py`.
+- **Rule**: Always import `mcp` from `coldquery.app` in tools/resources.
+
 **Tool Registration** - Use decorator, no manual registration:
 ```python
-from coldquery.server import mcp
+from coldquery.app import mcp  # Import from app, not server
 from coldquery.dependencies import CurrentActionContext
 from coldquery.core.context import ActionContext
 

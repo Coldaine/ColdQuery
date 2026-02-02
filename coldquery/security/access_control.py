@@ -1,3 +1,16 @@
+"""
+Access control logic for ColdQuery.
+
+OPINIONATED STANCE: Default-Deny for Writes
+-------------------------------------------
+ColdQuery operates on a strict "Default-Deny" policy for data modification.
+Unless a user explicitly opts in via `autocommit=True` (unsafe/single-shot)
+or `session_id` (transactional/safe), ANY write operation (INSERT, UPDATE, DELETE,
+DDL) MUST be rejected.
+
+This prevents LLMs from accidentally destructing data while exploring.
+"""
+
 from typing import Optional
 
 
