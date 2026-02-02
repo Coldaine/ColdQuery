@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from coldquery.core.executor import QueryExecutor
 from coldquery.core.session import SessionManager
@@ -13,7 +12,7 @@ class ActionContext:
     session_manager: SessionManager
 
 
-async def resolve_executor(ctx: ActionContext, session_id: Optional[str]) -> QueryExecutor:
+async def resolve_executor(ctx: ActionContext, session_id: str | None) -> QueryExecutor:
     """
     Selects the appropriate database executor.
 

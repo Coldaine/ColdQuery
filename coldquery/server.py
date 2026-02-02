@@ -1,5 +1,7 @@
 import os
 import sys
+
+from coldquery import prompts, resources  # noqa: F401
 from coldquery.app import mcp
 
 # --- TOOL REGISTRATION ---
@@ -9,8 +11,7 @@ from coldquery.app import mcp
 # Note: These imports must happen at the module level (not inside if __name__)
 # to ensure tools are registered even when this module is imported by others.
 # -------------------------
-from coldquery.tools import pg_query, pg_tx, pg_schema, pg_admin, pg_monitor  # noqa: F401
-from coldquery import resources, prompts  # noqa: F401
+from coldquery.tools import pg_admin, pg_monitor, pg_query, pg_schema, pg_tx  # noqa: F401
 
 if __name__ == "__main__":
     transport = "http" if "--transport" in sys.argv and "http" in sys.argv else "stdio"

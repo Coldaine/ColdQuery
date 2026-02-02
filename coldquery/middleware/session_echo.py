@@ -1,10 +1,10 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any
 
 from coldquery.core.session import SessionManager
 
 
-def enrich_response(result: Dict[str, Any], session_id: Optional[str], session_manager: SessionManager) -> str:
+def enrich_response(result: dict[str, Any], session_id: str | None, session_manager: SessionManager) -> str:
     """
     Enriches the response with session metadata.
 

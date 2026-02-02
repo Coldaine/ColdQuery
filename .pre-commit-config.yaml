@@ -18,13 +18,12 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
 
-  # Ruff - Fast Python linter and formatter
+  # Ruff - Fast Python linter and formatter (config in pyproject.toml)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.1
     hooks:
       # Ruff format (autofix) - runs on pre-commit
       - id: ruff-format
-        args: [--line-length=120]
 
       # Ruff check with autofix - runs on pre-commit
       - id: ruff

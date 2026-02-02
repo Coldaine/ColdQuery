@@ -1,11 +1,11 @@
-from typing import Any, Dict
+from typing import Any
 
 from coldquery.core.context import ActionContext, resolve_executor
 from coldquery.middleware.session_echo import enrich_response
 from coldquery.security.access_control import require_write_access
 
 
-async def create_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def create_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Create database object."""
     session_id = params.get("session_id")
     autocommit = params.get("autocommit")
@@ -22,7 +22,7 @@ async def create_handler(params: Dict[str, Any], context: ActionContext) -> str:
     return enrich_response(result.to_dict(), session_id, context.session_manager)
 
 
-async def alter_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def alter_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Alter database object."""
     session_id = params.get("session_id")
     autocommit = params.get("autocommit")
@@ -39,7 +39,7 @@ async def alter_handler(params: Dict[str, Any], context: ActionContext) -> str:
     return enrich_response(result.to_dict(), session_id, context.session_manager)
 
 
-async def drop_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def drop_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Drop database object."""
     session_id = params.get("session_id")
     autocommit = params.get("autocommit")

@@ -1,5 +1,4 @@
 import re
-from typing import Optional
 
 # PostgreSQL identifier max length is 63 characters
 MAX_IDENTIFIER_LENGTH = 63
@@ -55,7 +54,7 @@ def sanitize_identifier(name: str) -> str:
     return f'"{escaped_name}"'
 
 
-def sanitize_table_name(table: str, schema: Optional[str] = None) -> str:
+def sanitize_table_name(table: str, schema: str | None = None) -> str:
     """
     Sanitizes a table name, optionally with a schema.
 
@@ -73,7 +72,7 @@ def sanitize_table_name(table: str, schema: Optional[str] = None) -> str:
     return sanitized_table
 
 
-def sanitize_column_ref(column: str, table: Optional[str] = None) -> str:
+def sanitize_column_ref(column: str, table: str | None = None) -> str:
     """
     Sanitizes a column reference, optionally with a table.
 

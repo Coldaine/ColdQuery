@@ -1,10 +1,10 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 from coldquery.core.context import ActionContext, resolve_executor
 
 
-async def stats_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def stats_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Get table statistics."""
     session_id = params.get("session_id")
     table = params.get("table")

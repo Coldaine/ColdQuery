@@ -1,12 +1,12 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 from coldquery.core.context import ActionContext
 from coldquery.middleware.session_echo import enrich_response
 from coldquery.security.identifiers import sanitize_identifier
 
 
-async def begin_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def begin_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Begin a new transaction."""
     isolation_level = params.get("isolation_level")
 
@@ -39,10 +39,10 @@ async def begin_handler(params: Dict[str, Any], context: ActionContext) -> str:
     except Exception as e:
         # Cleanup on failure
         await context.session_manager.close_session(session_id)
-        raise RuntimeError(f"Failed to begin transaction: {e}")
+        raise RuntimeError(f"Failed to begin transaction: {e}") from e
 
 
-async def commit_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def commit_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Commit transaction and close session."""
     session_id = params.get("session_id")
 
@@ -61,7 +61,7 @@ async def commit_handler(params: Dict[str, Any], context: ActionContext) -> str:
         await context.session_manager.close_session(session_id)
 
 
-async def rollback_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def rollback_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Rollback transaction and close session."""
     session_id = params.get("session_id")
 
@@ -80,7 +80,7 @@ async def rollback_handler(params: Dict[str, Any], context: ActionContext) -> st
         await context.session_manager.close_session(session_id)
 
 
-async def savepoint_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def savepoint_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Create a savepoint within a transaction."""
     session_id = params.get("session_id")
     savepoint_name = params.get("savepoint_name")
@@ -107,7 +107,7 @@ async def savepoint_handler(params: Dict[str, Any], context: ActionContext) -> s
     return enrich_response(result, session_id, context.session_manager)
 
 
-async def release_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def release_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Release a savepoint."""
     session_id = params.get("session_id")
     savepoint_name = params.get("savepoint_name")
@@ -134,7 +134,7 @@ async def release_handler(params: Dict[str, Any], context: ActionContext) -> str
     return enrich_response(result, session_id, context.session_manager)
 
 
-async def list_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def list_handler(params: dict[str, Any], context: ActionContext) -> str:
     """List all active sessions."""
     sessions = context.session_manager.list_sessions()
 

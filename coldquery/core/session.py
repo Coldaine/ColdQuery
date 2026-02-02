@@ -1,7 +1,6 @@
 import asyncio
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime, timedelta
 
 from coldquery.core.executor import QueryExecutor, db_executor
 from coldquery.core.logger import get_logger
@@ -16,21 +15,21 @@ class SessionData:
     def __init__(self, session_id: str, executor: QueryExecutor):
         self.id = session_id
         self.executor = executor
-        self.created_at = datetime.now(timezone.utc)
-        self.last_accessed = datetime.now(timezone.utc)
-        self.ttl_timer: Optional[asyncio.TimerHandle] = None
+        self.created_at = datetime.now(UTC)
+        self.last_accessed = datetime.now(UTC)
+        self.ttl_timer: asyncio.TimerHandle | None = None
 
     @property
     def expires_in(self) -> float:
         """Minutes until session expires."""
         expiry_time = self.last_accessed + timedelta(minutes=SESSION_TTL_MINUTES)
-        remaining = (expiry_time - datetime.now(timezone.utc)).total_seconds() / 60
+        remaining = (expiry_time - datetime.now(UTC)).total_seconds() / 60
         return max(0, remaining)
 
 
 class SessionManager:
     def __init__(self, pool_executor: QueryExecutor):
-        self._sessions: Dict[str, SessionData] = {}
+        self._sessions: dict[str, SessionData] = {}
         self._pool_executor = pool_executor
 
     async def create_session(self) -> str:
@@ -56,14 +55,14 @@ class SessionManager:
             logger.error(f"Failed to create session: {e}")
             raise
 
-    def get_session(self, session_id: str) -> Optional[SessionData]:
+    def get_session(self, session_id: str) -> SessionData | None:
         """Get session data by ID without resetting TTL."""
         return self._sessions.get(session_id)
 
-    def get_session_executor(self, session_id: str) -> Optional[QueryExecutor]:
+    def get_session_executor(self, session_id: str) -> QueryExecutor | None:
         session_data = self._sessions.get(session_id)
         if session_data:
-            session_data.last_accessed = datetime.now(timezone.utc)
+            session_data.last_accessed = datetime.now(UTC)
             self._reset_ttl(session_id)
             return session_data.executor
         return None
@@ -94,8 +93,8 @@ class SessionManager:
         logger.warning(f"Session expired due to inactivity: {session_id}")
         await self.close_session(session_id)
 
-    def list_sessions(self) -> List[Dict]:
-        now = datetime.now(timezone.utc)
+    def list_sessions(self) -> list[dict]:
+        now = datetime.now(UTC)
         return [
             {
                 "id": session_id,

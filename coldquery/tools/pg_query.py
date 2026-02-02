@@ -1,4 +1,4 @@
-from typing import Any, List, Literal, Optional
+from typing import Any, Literal
 
 from coldquery.actions.query.explain import explain_handler
 from coldquery.actions.query.read import read_handler
@@ -21,12 +21,12 @@ QUERY_ACTIONS = {
 @mcp.tool()
 async def pg_query(
     action: Literal["read", "write", "explain", "transaction"],
-    sql: Optional[str] = None,
-    params: Optional[List[Any]] = None,
-    analyze: Optional[bool] = None,
-    operations: Optional[List[dict]] = None,
-    session_id: Optional[str] = None,
-    autocommit: Optional[bool] = None,
+    sql: str | None = None,
+    params: list[Any] | None = None,
+    analyze: bool | None = None,
+    operations: list[dict] | None = None,
+    session_id: str | None = None,
+    autocommit: bool | None = None,
     context: ActionContext = CurrentActionContext(),
 ) -> str:
     """Execute SQL queries with safety controls.

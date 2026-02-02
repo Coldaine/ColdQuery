@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Protocol
 
 import asyncpg
 
 
 @dataclass
 class QueryResult:
-    rows: List[Dict[str, Any]]
-    row_count: Optional[int]
-    fields: Optional[List[Dict[str, Any]]]
+    rows: list[dict[str, Any]]
+    row_count: int | None
+    fields: list[dict[str, Any]] | None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "rows": self.rows,
             "row_count": self.row_count,
@@ -23,22 +23,20 @@ class QueryResult:
 
 class QueryExecutor(Protocol):
     async def execute(
-        self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None
+        self, sql: str, params: list[Any] | None = None, timeout_ms: int | None = None
     ) -> QueryResult: ...
 
     async def disconnect(self, destroy: bool = False) -> None: ...
 
-    async def create_session(self) -> "QueryExecutor": ...
+    async def create_session(self) -> QueryExecutor: ...
 
 
 class AsyncpgSessionExecutor:
-    def __init__(self, connection: asyncpg.Connection, pool: Optional[asyncpg.Pool] = None):
+    def __init__(self, connection: asyncpg.Connection, pool: asyncpg.Pool | None = None):
         self._connection = connection
         self._pool = pool
 
-    async def execute(
-        self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None
-    ) -> QueryResult:
+    async def execute(self, sql: str, params: list[Any] | None = None, timeout_ms: int | None = None) -> QueryResult:
         if timeout_ms:
             await self._connection.execute(f"SET statement_timeout = {int(timeout_ms)}")
 
@@ -80,12 +78,12 @@ class AsyncpgSessionExecutor:
         except Exception:
             pass  # Connection may already be released or closed
 
-    async def create_session(self) -> "QueryExecutor":
+    async def create_session(self) -> QueryExecutor:
         return self
 
 
 class AsyncpgPoolExecutor:
-    _pool: Optional[asyncpg.Pool] = None
+    _pool: asyncpg.Pool | None = None
 
     async def _get_pool(self) -> asyncpg.Pool:
         if self._pool is None:
@@ -98,9 +96,7 @@ class AsyncpgPoolExecutor:
             )
         return self._pool
 
-    async def execute(
-        self, sql: str, params: Optional[List[Any]] = None, timeout_ms: Optional[int] = None
-    ) -> QueryResult:
+    async def execute(self, sql: str, params: list[Any] | None = None, timeout_ms: int | None = None) -> QueryResult:
         pool = await self._get_pool()
         async with pool.acquire() as connection:
             return await AsyncpgSessionExecutor(connection).execute(sql, params, timeout_ms)
@@ -113,7 +109,7 @@ class AsyncpgPoolExecutor:
                 await self._pool.close()
             self._pool = None
 
-    async def create_session(self) -> "QueryExecutor":
+    async def create_session(self) -> QueryExecutor:
         pool = await self._get_pool()
         connection = await pool.acquire()
         return AsyncpgSessionExecutor(connection, pool)

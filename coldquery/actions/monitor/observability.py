@@ -1,10 +1,10 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 from coldquery.core.context import ActionContext, resolve_executor
 
 
-async def activity_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def activity_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Get active queries."""
     session_id = params.get("session_id")
     include_idle = params.get("include_idle", False)
@@ -24,7 +24,7 @@ async def activity_handler(params: Dict[str, Any], context: ActionContext) -> st
     return json.dumps(result.to_dict(), default=str)
 
 
-async def connections_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def connections_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Get connection stats."""
     session_id = params.get("session_id")
     executor = await resolve_executor(context, session_id)
@@ -34,7 +34,7 @@ async def connections_handler(params: Dict[str, Any], context: ActionContext) ->
     return json.dumps(result.to_dict(), default=str)
 
 
-async def locks_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def locks_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Get lock information."""
     session_id = params.get("session_id")
     executor = await resolve_executor(context, session_id)
@@ -55,7 +55,7 @@ async def locks_handler(params: Dict[str, Any], context: ActionContext) -> str:
     return json.dumps(result.to_dict(), default=str)
 
 
-async def size_handler(params: Dict[str, Any], context: ActionContext) -> str:
+async def size_handler(params: dict[str, Any], context: ActionContext) -> str:
     """Get database sizes."""
     session_id = params.get("session_id")
     database = params.get("database")

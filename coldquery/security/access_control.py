@@ -11,10 +11,8 @@ DDL) MUST be rejected.
 This prevents LLMs from accidentally destructing data while exploring.
 """
 
-from typing import Optional
 
-
-def require_write_access(session_id: Optional[str], autocommit: Optional[bool]) -> None:
+def require_write_access(session_id: str | None, autocommit: bool | None) -> None:
     """
     Enforces the safety policy for write operations.
 
