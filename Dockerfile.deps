@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     wget \
-    && pip install --no-cache-dir fastmcp asyncpg pydantic \
+    && pip install --no-cache-dir "fastmcp>=3.0.0b1" "asyncpg>=0.30.0" "pydantic>=2.0" \
     && apt-get remove -y gcc \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
