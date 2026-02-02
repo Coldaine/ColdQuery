@@ -16,9 +16,9 @@ RUN apk add --no-cache \
 COPY pyproject.toml ./
 COPY coldquery ./coldquery
 
-# Install dependencies
+# Install dependencies (NOT editable - editable install breaks multi-stage builds)
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e .
+    pip install --no-cache-dir .
 
 # Stage 2: Runtime
 FROM python:3.12-alpine
