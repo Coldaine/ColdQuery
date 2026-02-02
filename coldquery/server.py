@@ -12,9 +12,16 @@ if __name__ == "__main__":
         "http" if "--transport" in sys.argv and "http" in sys.argv else "stdio"
     )
 
-    if transport == "http":
-        host = os.environ.get("HOST", "0.0.0.0")
-        port = int(os.environ.get("PORT", "3000"))
-        mcp.run(transport="http", host=host, port=port)
-    else:
-        mcp.run()
+        if transport == "http":
+
+            host = os.environ.get("HOST", "0.0.0.0")
+
+            port = int(os.environ.get("PORT", "19002"))
+
+            mcp.run(transport="http", host=host, port=port)
+
+        else:
+
+            mcp.run()
+
+    

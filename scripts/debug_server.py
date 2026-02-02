@@ -60,7 +60,8 @@ async def traced_list_tools(run_middleware=True):
         print(f">>> Original list_tools ERROR: {e}")
         import traceback
         traceback.print_exc()
-        result = []
+        print("=" * 60 + "\n")
+        raise
 
     print("=" * 60 + "\n")
     return result

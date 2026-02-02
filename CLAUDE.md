@@ -341,22 +341,6 @@ mypy coldquery/
 # - Use Optional[T] for nullable parameters
 ```
 
-### FastMCP HTTP Transport Bug (Known Issue)
-
-**Problem**: FastMCP 3.0.0b1's HTTP transport returns empty tools list.
-
-**Symptoms**:
-- `tools/list` via HTTP returns `{"tools":[]}`
-- Tools ARE registered internally (verified via `mcp.list_tools()`)
-- Health endpoint works, MCP initialize works
-
-**Workarounds being investigated**:
-1. Try SSE transport: `mcp.run(transport="sse")`
-2. Debug FastMCP HTTP handler code path
-3. File bug report with FastMCP maintainers
-
-See `docs/reports/2026-02-01-deployment-investigation.md` for full details.
-
 ---
 
 ## Project Status
