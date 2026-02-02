@@ -20,7 +20,7 @@ docker-compose up -d
 docker-compose logs -f
 
 # Check health
-curl http://localhost:3000/health
+curl http://localhost:19002/health
 
 # Stop services
 docker-compose down
@@ -74,7 +74,7 @@ sudo tailscale up
 
 In GitHub repository settings, add secrets:
 
-- `RASPBERry_PI_SSH_KEY` - SSH private key for deployment
+- `RASPBERRY_PI_SSH_KEY` - SSH private key for deployment
 - `DB_HOST` - Database hostname
 - `DB_PORT` - Database port
 - `DB_USER` - Database username
@@ -109,7 +109,7 @@ docker ps
 docker-compose -f /opt/coldquery/docker-compose.yml logs -f
 
 # Test health endpoint
-curl http://localhost:3000/health
+curl http://localhost:19002/health
 ```
 
 ---
@@ -144,13 +144,14 @@ docker load -i /tmp/coldquery-arm64.tar
 ```bash
 docker run -d \
   --name coldquery \
-  -p 3000:3000 \
+  -p 19002:19002 \
   -e DB_HOST=your-db-host \
   -e DB_PORT=5432 \
   -e DB_USER=mcp \
   -e DB_PASSWORD=mcp \
   -e DB_DATABASE=mcp_prod \
-  coldquery:arm64
+  -e PORT=19002 \
+  coldquery:latest
 ```
 
 ---
@@ -164,7 +165,7 @@ docker run -d \
 docker ps
 
 # Health endpoint
-curl http://localhost:3000/health
+curl http://localhost:19002/health
 
 # Container logs
 docker logs coldquery-server -f
@@ -267,63 +268,38 @@ docker-compose up -d
 
 ## Rollback Procedures
 
-### Automated Rollback (via GitHub Actions)
+### Via Git Revert
 
-To redeploy a previous, stable version of the application:
+Since images are built natively on the Pi, rollback by reverting to a previous commit:
 
-1.  **Find the commit SHA** of the last known good deployment. You can find this in the commit history on your `main` branch.
-2.  **Go to the "Deploy to Raspberry Pi" workflow** in the "Actions" tab of your GitHub repository.
-3.  **Run the workflow manually** by clicking "Run workflow".
-4.  **In the "Use workflow from" dropdown, select "Branch"** and ensure it's set to `main`.
-5.  **Enter the stable commit SHA** you identified in the input field (if the workflow is configured to accept a SHA, otherwise you may need to revert the `main` branch to that SHA).
-6.  **Run the workflow.** This will build the Docker image from that specific commit and deploy it.
+```bash
+# SSH to Pi
+ssh raspberrypi
 
-### Manual Rollback (on the Raspberry Pi)
+# Navigate to deployment directory
+cd /opt/coldquery
 
-If a new deployment fails and you need to quickly revert, you can do so directly on the Raspberry Pi:
+# Check recent commits
+git log --oneline -10
 
-1.  **SSH into your Raspberry Pi:**
-    ```bash
-    ssh your_user@your_pi_host
-    ```
+# Revert to specific commit
+git checkout <commit-sha>
 
-2.  **Navigate to your deployment directory:**
-    ```bash
-    cd /opt/coldquery
-    ```
+# Rebuild and restart
+docker-compose -f docker-compose.deploy.yml down
+docker-compose -f docker-compose.deploy.yml build
+docker-compose -f docker-compose.deploy.yml up -d
 
-3.  **Find the image tag of the previous version.** Docker images pushed from the CI/CD pipeline are tagged with the commit SHA. You can list the images available locally:
-    ```bash
-    docker images | grep "ghcr.io/coldaine/coldquery"
-    ```
-    This will show you a list of images, including `latest` and the images tagged with commit SHAs. Identify the tag of the version you want to roll back to.
+# Verify
+docker logs coldquery-server
+curl http://localhost:19002/health
+```
 
-4.  **Update the `docker-compose.deploy.yml` file:**
-    Open the `docker-compose.deploy.yml` file and change the `image` tag for the `coldquery` service to the specific commit SHA tag you want to deploy.
+### Via CI/CD
 
-    For example, change:
-    ```yaml
-    services:
-      coldquery:
-        image: ghcr.io/coldaine/coldquery:latest
-        ...
-    ```
-    to:
-    ```yaml
-    services:
-      coldquery:
-        image: ghcr.io/coldaine/coldquery:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
-        ...
-    ```
+Push a revert commit to main to trigger automatic redeployment:
 
-5.  **Restart the service:**
-    ```bash
-    docker-compose -f docker-compose.deploy.yml up -d
-    ```
-    Docker Compose will see that the image tag has changed and will stop the current container and start a new one using the specified older image.
-
-6.  **Verify the rollback:**
-    Check the container logs and the health status to ensure the application is running correctly.
-    ```bash
-    docker logs coldquery-server
-    ```
+```bash
+git revert HEAD
+git push origin main
+```
