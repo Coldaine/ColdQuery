@@ -6,8 +6,11 @@
 # Install
 pip install -e ".[dev]"
 
-# Start test database
+# Start test database and ColdQuery server
 docker compose up -d
+
+# (Optional) start only PostgreSQL when you just need the database
+docker compose up -d postgres
 
 # Run tests
 pytest tests/
@@ -42,7 +45,10 @@ tests/
 Tools import `mcp` from `app.py` and use decorators:
 
 ```python
+from typing import Literal
+
 from coldquery.app import mcp  # ALWAYS import from app, not server!
+from coldquery.core.context import ActionContext
 from coldquery.dependencies import CurrentActionContext
 
 @mcp.tool()
@@ -59,7 +65,10 @@ async def my_tool(
 ```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+from coldquery.actions.query.read import read_handler as my_handler
 from coldquery.core.context import ActionContext
+from coldquery.core.executor import QueryResult
 
 @pytest.mark.asyncio
 async def test_my_handler():
@@ -69,6 +78,7 @@ async def test_my_handler():
 
     ctx = ActionContext(executor=mock_executor, session_manager=MagicMock())
 
+    # Swap in whichever handler you need to test
     result = await my_handler({"sql": "SELECT 1"}, ctx)
 
     assert "rows" in result

@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-01
 **Status:** Planned
-**Branch:** `feature/mcp-protocol-tests`
+**Branch:** `feature/docs-cleanup`
 
 ---
 
@@ -28,21 +28,26 @@ PRs #33-37 were closed as superseded. The core HTTP transport fix was merged in 
 **File:** `tests/integration/test_mcp_protocol.py`
 
 **Functionality:**
+
 1. Spawn `python -m coldquery.server` as subprocess
 2. Communicate via MCP protocol (JSON-RPC over stdin/stdout)
 3. Test:
-   - Server initialization
-   - `tools/list` returns all 5 tools
-   - `tools/call` with `pg_query` action="read"
-   - `tools/call` with `pg_query` action="write" + autocommit
-   - Transaction lifecycle: begin -> write -> commit
+    - Server initialization
+    - `tools/list` returns all 5 tools
+    - `tools/call` with `pg_query` action="read"
+    - `tools/call` with `pg_query` action="write" + autocommit
+    - Transaction lifecycle: begin -> write -> commit
 
 **Dependencies:**
+
 - `mcp` Python SDK (already in dev dependencies)
 - PostgreSQL test database
 
 **Test Pattern:**
+
 ```python
+import sys
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -50,14 +55,17 @@ async def test_mcp_protocol():
     server_params = StdioServerParameters(
         command=sys.executable,
         args=["-m", "coldquery.server"],
-        env=get_test_env()
+        env=get_test_env(),
     )
+
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools = await session.list_tools()
             # assertions...
 ```
+
+`get_test_env()` is a helper (e.g., in `tests/integration/conftest.py`) that mirrors the Docker/CI env vars so subprocesses hit the same database.
 
 ---
 
@@ -70,6 +78,7 @@ async def test_mcp_protocol():
 **Note:** This may be optional since the bug is fixed. Consider if worth maintaining.
 
 **Functionality:**
+
 1. Start server with `--transport http`
 2. Send MCP JSON-RPC requests via HTTP
 3. Verify `tools/list` returns all tools (regression test)
@@ -79,6 +88,7 @@ async def test_mcp_protocol():
 ### Phase 3: CI Integration
 
 **Updates to `.github/workflows/ci.yml`:**
+
 1. Ensure integration tests run with real PostgreSQL (already configured)
 2. Add MCP protocol tests to integration test job
 

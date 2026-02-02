@@ -20,7 +20,7 @@ docker-compose up -d
 docker-compose logs -f
 
 # Check health
-curl http://localhost:19002/health
+curl http://localhost:3000/health
 
 # Stop services
 docker-compose down
@@ -151,7 +151,7 @@ docker run -d \
   -e DB_PASSWORD=mcp \
   -e DB_DATABASE=mcp_prod \
   -e PORT=19002 \
-  coldquery:latest
+  coldquery:arm64  # use the locally built ARM64 tag (re-tag if you prefer a custom name)
 ```
 
 ---
@@ -282,8 +282,9 @@ cd /opt/coldquery
 # Check recent commits
 git log --oneline -10
 
-# Revert to specific commit
-git checkout <commit-sha>
+# Revert to specific commit while staying on the main branch
+git switch main
+git reset --hard <commit-sha>
 
 # Rebuild and restart
 docker-compose -f docker-compose.deploy.yml down
