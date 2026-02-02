@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   lint:
@@ -54,10 +55,34 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  integration-tests:
-    name: Integration Tests
+  # Testcontainers-based integration tests
+  # Uses ephemeral PostgreSQL container managed by the test itself
+  integration-tests-testcontainers:
+    name: Integration Tests (Testcontainers)
     runs-on: ubuntu-latest
-    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install "testcontainers[postgres]"
+
+      - name: Run Testcontainers integration tests
+        run: pytest tests/conftest_testcontainers.py -v
+
+  # Service container-based integration tests (legacy)
+  # Uses GitHub Actions service container for PostgreSQL
+  integration-tests-service:
+    name: Integration Tests (Service Container)
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Known issues with these tests
 
     services:
       postgres:
