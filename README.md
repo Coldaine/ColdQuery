@@ -2,7 +2,63 @@
 
 A secure, stateful PostgreSQL Model Context Protocol (MCP) server optimized for Agentic AI workflows. Built with **FastMCP 3.0** (Python).
 
-## Quick Start
+## Connect to ColdQuery
+
+### Production Server (Raspberry Pi)
+
+ColdQuery is deployed at:
+```
+https://raspberryoracle.tail4c911d.ts.net/mcp
+```
+
+> **Note:** Requires Tailscale access to the `tail4c911d.ts.net` tailnet.
+
+### Claude Desktop Configuration
+
+Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+```json
+{
+  "mcpServers": {
+    "coldquery": {
+      "url": "https://raspberryoracle.tail4c911d.ts.net/mcp",
+      "transport": "http"
+    }
+  }
+}
+```
+
+### Claude Code CLI Configuration
+
+```bash
+claude mcp add coldquery --transport http --url https://raspberryoracle.tail4c911d.ts.net/mcp
+```
+
+Or add to `.mcp.json` in your project:
+
+```json
+{
+  "mcpServers": {
+    "coldquery": {
+      "type": "http",
+      "url": "https://raspberryoracle.tail4c911d.ts.net/mcp"
+    }
+  }
+}
+```
+
+### Verify Connection
+
+Once configured, you can test with:
+```
+Use pg_monitor with action "health" to check database status
+```
+
+The server provides 5 tools: `pg_query`, `pg_schema`, `pg_admin`, `pg_tx`, `pg_monitor`.
+
+---
+
+## Quick Start (Local Development)
 
 ```bash
 # 1. Clone and install
